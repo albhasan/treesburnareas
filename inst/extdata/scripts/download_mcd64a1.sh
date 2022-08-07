@@ -1,10 +1,15 @@
 #!/bin/bash
 ###############################################################################
-# Download MCD64A1 data.
+# Download MCD64A1 collection 61 data from USGS site.
 #------------------------------------------------------------------------------
+# NOTE: This script downloads collection 61. For dowloding collection 6 use
+#       instead script 'download_mcd61a.lftp'.
+# TODO: This script isn't downloaind all the tiles. Is collection 61 ready?
 ###############################################################################
+echo "DEPRECATED: Use instead 'download_mcd61a.lftp'"
+exit 1
 
-# Bash script with Earh Data credentials.
+ Bash script with Earh Data credentials.
 FILE=${HOME}/earthdata_credentials.sh
 
 # Directory for storing the downloaded files.
@@ -25,15 +30,13 @@ fi
 [ -d "${OUT_DIR}" ] || echo "ERROR: Directory ${OUT_DIR} does not exist!"
 
 # Download the data (Brazilian Amazon).
+wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h10v09*.hdf' -t 5 ${PARAMS} ${URL}
+wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h11v08*.hdf' -t 5 ${PARAMS} ${URL}
 wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h11v09*.hdf' -t 5 ${PARAMS} ${URL}
 wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h11v10*.hdf' -t 5 ${PARAMS} ${URL}
 wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h12v08*.hdf' -t 5 ${PARAMS} ${URL}
 wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h12v09*.hdf' -t 5 ${PARAMS} ${URL}
 wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h12v10*.hdf' -t 5 ${PARAMS} ${URL}
 wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h13v09*.hdf' -t 5 ${PARAMS} ${URL}
-
-# These files are downloading! 
-wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h10v09*.hdf' -t 5 ${PARAMS} ${URL}
-wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h11v08*.hdf' -t 5 ${PARAMS} ${URL}
 
 exit 0
