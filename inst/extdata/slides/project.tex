@@ -1,6 +1,6 @@
 \documentclass{beamer}
 
-\usetheme {default}
+\usetheme{default}
 
 \usepackage{hyperref}
 \usepackage{graphicx}
@@ -43,11 +43,11 @@
     \begin{itemize}
         \item NEW QUESTIONS:
         \begin{itemize}
-            \item How much DETER's area doesn't have a heat spot?
-            \item What is FireCCI's confidence required to make it match DETER?
             \item How many DETER's Burned Area polygons fall inside PRODES?
             \item How many sucessive burns are needed for deforestation?
             \item How many DETER's areas don't have a heat spot?
+            \item How much DETER's area doesn't have a heat spot?
+            \item What is FireCCI's confidence required to make it match DETER?
             \item Are the burned areas counted more than once if they last long
                 enoug?
         \end{itemize}
@@ -144,6 +144,21 @@
             \item DETER-R: An Operational Near-Real Time Tropical Forest 
                 Disturbance Warning System Based on Sentinel-1 Time Series 
                 Analysis.
+        \end{itemize}
+        \item Is it possible to get DETER data from 2015? 
+        \begin{itemize}
+            \item He is going to check the DB if the data is available and if
+                there were changes in the mapping procedures before 2016.
+        \end{itemize}
+        \item DETER's Linear Mixture Model is made for the whole Amazonia, or
+            for each State, or for each CBERS image?
+        \begin{itemize}
+            \item One LMM for each image.
+        \end{itemize}
+    \item Does DETER-R also identify burn scars? 
+        \begin{itemize}
+            \item Marcos is going to check. As far as he understands, DETER-R
+                is automatic.
         \end{itemize}
     \end{itemize}
 \end{frame}
@@ -464,8 +479,6 @@
 
 
 
-
-
 \begin{frame}
     \frametitle{DETER - Map of burn scars and warnings}
     \begin{figure}
@@ -474,11 +487,21 @@
     \end{figure}
 \end{frame}
 
+
+
 \begin{frame}
     \frametitle{DETER - Area by state and year}
     \begin{figure}
         \centering
         \includegraphics[width=1.0\textwidth]{./img/deter_warnings_area.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{DETER - Warnings by state and year}
+    \begin{figure}
+        \centering
+        \includegraphics[width=1.0\textwidth]{./img/deter_warnings_number.png}
     \end{figure}
 \end{frame}
 
@@ -491,13 +514,7 @@
     \end{figure}
 \end{frame}
 
-\begin{frame}
-    \frametitle{DETER - Warnings by state and year}
-    \begin{figure}
-        \centering
-        \includegraphics[width=1.0\textwidth]{./img/deter_warnings_number.png}
-    \end{figure}
-\end{frame}
+
 
 \begin{frame}
     \frametitle{BURN SCAR by area, state, type, and size}
@@ -629,6 +646,21 @@
     \frametitle{Hetereogeneous platforms}
     \begin{itemize}
         \item JavaScript, Python, R.
+    \end{itemize}
+\end{frame}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Vocabulary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[t, allowframebreaks]
+    \frametitle{Fire vocabulary}
+    \begin{itemize}
+        \item Fire event.
+        \item Fire spot.
+        \item Burned area.
     \end{itemize}
 \end{frame}
 
