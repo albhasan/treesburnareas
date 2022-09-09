@@ -2,6 +2,7 @@
 # Exploratory analysis of burn scars in DETER
 #------------------------------------------------------------------------------
 # NOTE: This script creates the figures used in the slides.
+# TODO: Run at INPE!!!!!!!!!!!!!!!!!!!!!!1
 ###############################################################################
 
 library(dplyr)
@@ -17,10 +18,27 @@ library(classInt)
 deter_file <- "~/Documents/data/deter/amazonia_legal/deter_public.shp"
 stopifnot("File not found" = file.exists(deter_file))
 
+prodes_file <- "~/Documents/data/prodes/amazonia/yearly_deforestation_biome.shp"
+stopifnot("File not found" = file.exists(prodes_file))
+
 out_dir <- "~/Documents/github/treesburnareas/inst/extdata/slides/img"
 stopifnot("Directory not found" = dir.exists(out_dir))
 
-clean_file <- deter_file %>%
+# DETER vector file after removing invalid geometries.
+deter_clean_file <-
+    deter_file %>%
+    tools::file_path_sans_ext() %>%
+    paste0(., "_valid.shp")
+
+# DETER vector file after self-intersection (it contains different geometries).
+deter_self_inter_file <-
+    deter_file %>%
+    dirname() %>%
+    file.path("deter_self_inter.rds")
+
+# PRODES vector file after removing invalid geometries.
+prodes_clean_file <-
+    prodes_file %>%
     tools::file_path_sans_ext() %>%
     paste0(., "_valid.shp")
 
@@ -75,9 +93,9 @@ to_doy_prodes <- function(x, start_month = "08", start_day = "01") {
 
 
 
-#---- Clean and save data ----
+#---- DETER clean and save data ----
 
-if (!file.exists(clean_file)) {
+if (!file.exists(deter_clean_file)) {
     # NOTE: 268796 features!
     deter_sf <-
         deter_file %>%
@@ -104,7 +122,8 @@ if (!file.exists(clean_file)) {
 
 #---- Read clean data ----
 
-deter_sf <- clean_file %>%
+deter_sf <-
+    deter_clean_file %>%
     sf::read_sf()
 
 
@@ -389,4 +408,100 @@ ggplot2::ggsave(
 )
 
 print(plot_deter_events_size_month)
+
+
+
+#---- Compare DETER BA to PRODES ----
+
+
+
+#---- PRODES clean and save data ----
+
+if (!file.exists(prodes_clean_file)) {
+    # NOTE: 599819 features!
+    prodes_sf <-
+        prodes_file %>%
+        sf::read_sf() %>%
+        sf::st_make_valid() %>%
+        dplyr::mutate(is_valid = sf::st_is_valid(.))
+    # NOTE: 0 invalid features remain!
+    prodes_sf %>%
+        dplyr::filter(is_valid == FALSE) %>%
+        sf::st_is_valid(reason = TRUE)
+
+
+     # Filter out invalid features.
+    prodes_sf <-
+        prodes_sf %>%
+        dplyr::filter(is_valid) %>%
+        dplyr::filter(!is.na(image_date)) %>%
+    # Add convenient information.
+        dplyr::mutate(image_date = stringr::str_sub(image_date, start = 1L,
+                                                    end = 10L),
+                      image_date = lubridate::as_date(image_date),
+                      area_km2 = units::drop_units(sf::st_area(.) / (1000^2)),
+                      year = to_year_prodes(image_date)) %>%
+    # Save to disc.
+        sf::write_sf(paste0(tools::file_path_sans_ext(prodes_file),
+                            "_valid.shp"))
+}
+
+#---- How many times was the same area burned? ----
+
+# Self -intersect DETER data from different dates
+if (!file.exists(deter_self_inter_file)) {
+    deter_self_inter <-
+        deter_sf %>%
+        # One meter in degrees at the equator on a WGS84 ellipsoid (approx.).
+        #sf::st_set_precision(1 / 6378137) %>%
+        # NOTE: Any other precisions are omitting polygons!
+        sf::st_set_precision(0) %>%
+        # TODO: Should I intersect only Burned Area polygons?
+        sf::st_intersection() %>%
+        sf::st_collection_extract(type = "POLYGON") %>%
+        dplyr::filter(!sf::st_is_empty(.))
+    saveRDS(deter_self_inter, file = deter_self_inter_file)
+}else{
+    deter_self_inter <- readRDS(deter_self_inter_file)
+}
+
+
+###############################################################################
+# TODO: how many times was the same land burned? How often?
+# NOTE: All the polygons have only one self-intersection!
+deter_self_inter %>%
+    sf::st_drop_geometry() %>%
+    select(n.overlaps, origins)
+###############################################################################
+
+
+
+
+#---- PRODES ----
+
+
+
+#---- Read clean data ----
+
+prodes_sf <-
+    prodes_clean_file %>%
+    sf::read_sf()
+
+
+
+#---- Date range ----
+
+prodes_sf %>%
+    sf::st_drop_geometry() %>%
+    dplyr::pull(image_date) %>%
+    range()
+
+
+
+
+
+
+#---- How many DETER polygons intersect DETER polygons and when? ----
+
+
 
