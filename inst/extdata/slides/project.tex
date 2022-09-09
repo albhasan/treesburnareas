@@ -155,10 +155,16 @@
         \begin{itemize}
             \item One LMM for each image.
         \end{itemize}
-    \item Does DETER-R also identify burn scars? 
+        \item Does DETER-R also identify burn scars? 
         \begin{itemize}
-            \item Marcos is going to check. As far as he understands, DETER-R
-                is automatic.
+            \item No, DETER-R doesn't detect or use that label. Check DETER-R 
+                paper.
+            %\item Marcos is going to check. As far as he understands, DETER-R 
+                %is automatic.
+        \end{itemize}
+        \item Does DETER includes DETER-R polygons?
+        \begin{itemize}
+            \item No, it doesn not.
         \end{itemize}
     \end{itemize}
 \end{frame}
@@ -354,23 +360,51 @@
     \frametitle{DETER-R: An Operational Near-Real Time Tropical Forest 
     Disturbance Warning System Based on Sentinel-1 Time Series Analysis~\cite{doblas2022}}
     \begin{itemize}
-        \item Cloud cover is the main challenge to Near Real Time deforestation
-            monitoring systems. However, radas isn't as sensible to clouds as
-            optical imagery.
-        \item DETER-R uses Sentinel1 Radar images hosted and processed in 
-            Google Earth Engine.
-        \item DETER-R is a forest disturbance detection method based on 
-            time-series thresholding. The false-alert ration can be fixed by
-            setting the number of standard deviations~\cite{doblas2020}.
-        \item This method make no assumptions about the non-forest 
-            backscattering distribution.
-        \item DETER-R is an automated NRT forest disturbance detection 
-            system based on Sentinel1 data hosted in Google Earth Engine. After
-            automated analysis, forest disturbance pixel clusters are 
-            vectorized and sent to environmental enforcement agencies.
-        \item GEE processing includes: Orbit correction, border and thermal
-            noise removal, radiometric calibration, and terrain correction 
-            %TODO:
+        \item DETER-R doesn't separate deforestation for burn scar.
+        % \item DETER-R doesn't mixture data with DETER. It's supposed to run in
+        %     parallel with DETER.
+        % \item DETER-R isn't publicly available.
+        % \item DETER-R runs daily at 1AM BRT.
+        % \item DETER-R needs two anomaluos SAR observations over a 2-month 
+        %     time-series to confirm a warning.
+        % \item DETER-R has a mean warning-issue delay of 24 days since first 
+        %     perturbation.
+        % \item DETER-R; less than 0.5\% of polygons are false positives.
+        % \item Cloud cover is the main challenge to Near Real Time deforestation
+        %     monitoring systems. However, radar isn't as sensible to clouds as
+        %     optical imagery.
+        % \item DETER-R uses Sentinel1 Radar images hosted and processed in 
+        %     Google Earth Engine.
+        % \item DETER-R is a forest disturbance detection method based on 
+        %     time-series thresholding. The false-alert ration can be fixed by
+        %     setting the number of standard deviations~\cite{doblas2020}.
+        % \item This method make no assumptions about the non-forest 
+        %     backscattering distribution.
+        % \item DETER-R is an automated NRT forest disturbance detection 
+        %     system based on Sentinel1 data hosted in Google Earth Engine. After
+        %     automated analysis, forest disturbance pixel clusters are 
+        %     vectorized and sent to environmental enforcement agencies.
+        % \item GEE processing includes: Orbit correction, border and thermal
+        %     noise removal, radiometric calibration, and terrain correction 
+        % \item Forest extent comes from INPE, DLR, and IBGE.
+        % \item Validation by visual inspection of optical images (Planet, 
+        %     Sentinel2, Landsat).
+        % \item Open source GEE 
+        %     \href{https://mapbiomas.org/en/mapbiomas-fire-method}{scripts} 
+        %     (Python).
+        % \item DETER-R includes DETER data as a logistic model of distance to 
+        %     deforestation (up to 10 km). Most new deforestation happens within 
+        %     1km of old deforestation.
+        % \item DETER-R uses time S1 time series to adjust a 3-year model 
+        %     (learning collection) to compare to a 2-month data (detections 
+        %     collection). Then it uses a threshold (logistic model) to detect
+        %     any two consequtive inferior values as a confirmed detection.
+        % \item Deforestation (polygons) smaller than 1ha are discarded. 
+        % \item Polygons are labeled as low or high intensity depending on
+        %     intensity of change.
+        % \item Visual validation procedure. Compare DETER-R to DETER areas.
+        % \item Alerts are sent to CENIMA IBAMA using FTP.
+        % \item DETER-R was validated with field work in 2020.
     \end{itemize}
 \end{frame}
 
@@ -658,6 +692,11 @@
 \begin{frame}[t, allowframebreaks]
     \frametitle{Fire vocabulary}
     \begin{itemize}
+        \item Deforestation: Land conversion by supression of areas of 
+            primary vegetation by antropogenic actions (PRODES
+            ~\citep{dealmeida2022}). 
+        \item Clear cut (corte raso): Complete remotion of forest cover in a 
+            short time interval.
         \item Fire event.
         \item Fire spot.
         \item Burned area.
