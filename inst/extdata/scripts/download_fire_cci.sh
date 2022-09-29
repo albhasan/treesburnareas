@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 
+###############################################################################
 # Download ESA MODIS Fire_cci Burned Area data - Pixel product (only South 
 # America)
+#------------------------------------------------------------------------------
+# NOTE: 
+# - Run once a month!
+###############################################################################
 
-out_dir="${HOME}/data/fire_cci"
-[ -d "${out_dir}" ] || echo "ERROR: Directory ${out_dir} does not exist!"
+OUT_DIR="${HOME}/data/fire_cci"
+[ -d "${OUT_DIR}" ] || { echo "ERROR: Directory ${OUT_DIR} does not exist!" >&2; exit 1; }
 
-#url="https://dap.ceda.ac.uk/neodc/esacci/fire/data/burned_area/MODIS/pixel/v5.1/"
+URL="https://dap.ceda.ac.uk/neodc/esacci/fire/data/burned_area/MODIS/pixel/v5.1/compressed/"
 
-# NOTE: download only 2020!
-url="https://dap.ceda.ac.uk/neodc/esacci/fire/data/burned_area/MODIS/pixel/v5.1/compressed/2020/"
-
-wget -r -e robots=off -U mozilla -nH --cut-dirs=4 -P "${out_dir}" -t 5 -A '*AREA_2*.tar.gz' ${url}
-wget -r -e robots=off -U mozilla -nH --cut-dirs=4 -P "${out_dir}" -t 5 -A 'README*'         ${url}
-wget -r -e robots=off -U mozilla -nH --cut-dirs=4 -P "${out_dir}" -t 5 -A '*.pdf'           ${url}
+wget -e robots=off -m -np -R .html,.tmp -nH -U mozilla -nH --cut-dirs=4 -P "${OUT_DIR}" -t 5 -A '*AREA_2*.tar.gz' ${URL}
+wget -e robots=off -m -np -R .html,.tmp -nH -U mozilla -nH --cut-dirs=4 -P "${OUT_DIR}" -t 5 -A 'README*'         ${URL}
+wget -e robots=off -m -np -R .html,.tmp -nH -U mozilla -nH --cut-dirs=4 -P "${OUT_DIR}" -t 5 -A '*.pdf'           ${URL}
 
 exit 0
