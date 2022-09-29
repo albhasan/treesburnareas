@@ -1,42 +1,39 @@
 #!/bin/bash
 ###############################################################################
-# Download MCD64A1 collection 61 data from USGS site.
-#------------------------------------------------------------------------------
-# NOTE: This script downloads collection 61. For dowloding collection 6 use
-#       instead script 'download_mcd61a.lftp'.
-# TODO: This script isn't downloaind all the tiles. Is collection 61 ready?
+# Download MCD64A1 
 ###############################################################################
-echo "DEPRECATED: Use instead 'download_mcd61a.lftp'"
-exit 1
-
- Bash script with Earh Data credentials.
-FILE=${HOME}/earthdata_credentials.sh
 
 # Directory for storing the downloaded files.
 OUT_DIR="${HOME}/data/mcd64a1"
 
-# URL for downloading data. 
-URL='https://e4ftl01.cr.usgs.gov//DP131/MOTA/MCD64A1.061/'
-
-# Additional parameters for WGET.
-PARAMS='--no-clobber --no-host-directories --cut-dirs=3 --wait=1 --random-wait --waitretry=5 --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --keep-session-cookies --no-check-certificate --auth-no-challenge=on -r --reject "index.html*" --no-parent -e robots=off'
+# File with Earh Data credentials.
+FILE=${HOME}/earthdata_credentials.sh
 
 # Load Earth Data credentials from another file.
 if [ -f "$FILE" ]; then
-    source ${HOME}/earthdata_credentials.sh
+    source ${FILE}
 else
-    echo "ERROR: File with credentials not found: ${HOME}"
+    echo "ERROR: File with credentials not found: ${FILE}"
 fi
 [ -d "${OUT_DIR}" ] || echo "ERROR: Directory ${OUT_DIR} does not exist!"
 
-# Download the data (Brazilian Amazon).
-wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h10v09*.hdf' -t 5 ${PARAMS} ${URL}
-wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h11v08*.hdf' -t 5 ${PARAMS} ${URL}
-wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h11v09*.hdf' -t 5 ${PARAMS} ${URL}
-wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h11v10*.hdf' -t 5 ${PARAMS} ${URL}
-wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h12v08*.hdf' -t 5 ${PARAMS} ${URL}
-wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h12v09*.hdf' -t 5 ${PARAMS} ${URL}
-wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h12v10*.hdf' -t 5 ${PARAMS} ${URL}
-wget --http-user="${ED_USER}" --http-password="${ED_PASSWD}" -P "${OUT_DIR}" -A '*h13v09*.hdf' -t 5 ${PARAMS} ${URL}
+# Load ED_TOKEN
+source "${FILE}"
+
+# NOTE: download only 2020!
+URL="https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/6/MCD64A1/2020/"
+
+# Download data
+wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=3 "${URL}" --header \"Authorization: Bearer $ED_TOKEN\" -P "${OUT_DIR}"
+
+# NOTE: The accept list isn't working! 
+# wget -e robots=off -m -np -R .html,.tmp -A '*h10v09*' -nH --cut-dirs=3 "${URL}" --header "Authorization: Bearer $ED_TOKEN" -P "${OUT_DIR}"
+# wget -e robots=off -m -np -R .html,.tmp -A '*h11v08*.hdf' -nH --cut-dirs=3 "${URL}" --header "Authorization: Bearer $ED_TOKEN" -P "${OUT_DIR}"
+# wget -e robots=off -m -np -R .html,.tmp -A '*h11v09*.hdf' -nH --cut-dirs=3 "${URL}" --header "Authorization: Bearer $ED_TOKEN" -P "${OUT_DIR}"
+# wget -e robots=off -m -np -R .html,.tmp -A '*h11v10*.hdf' -nH --cut-dirs=3 "${URL}" --header "Authorization: Bearer $ED_TOKEN" -P "${OUT_DIR}"
+# wget -e robots=off -m -np -R .html,.tmp -A '*h12v08*.hdf' -nH --cut-dirs=3 "${URL}" --header "Authorization: Bearer $ED_TOKEN" -P "${OUT_DIR}"
+# wget -e robots=off -m -np -R .html,.tmp -A '*h12v09*.hdf' -nH --cut-dirs=3 "${URL}" --header "Authorization: Bearer $ED_TOKEN" -P "${OUT_DIR}"
+# wget -e robots=off -m -np -R .html,.tmp -A '*h12v10*.hdf' -nH --cut-dirs=3 "${URL}" --header "Authorization: Bearer $ED_TOKEN" -P "${OUT_DIR}"
+# wget -e robots=off -m -np -R .html,.tmp -A '*h13v09*.hdf' -nH --cut-dirs=3 "${URL}" --header "Authorization: Bearer $ED_TOKEN" -P "${OUT_DIR}"
 
 exit 0
