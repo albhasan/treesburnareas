@@ -2,7 +2,6 @@
 # Exploratory analysis of burn scars in DETER
 #------------------------------------------------------------------------------
 # NOTE: This script creates the figures used in the slides.
-# TODO: Run at INPE!!!!!!!!!!!!!!!!!!!!!!1
 ###############################################################################
 
 library(dplyr)
@@ -15,7 +14,7 @@ library(classInt)
 
 #---- Configuration ----
 
-deter_file <- "~/Documents/data/deter/amazonia_legal/deter_public.shp"
+deter_file <- "~/Documents/data/deter/amazonia_legal/deter_public_AG.shp"
 stopifnot("File not found" = file.exists(deter_file))
 
 prodes_file <- "~/Documents/data/prodes/amazonia/yearly_deforestation_biome.shp"
@@ -43,55 +42,6 @@ prodes_clean_file <-
     paste0(., "_valid.shp")
 
 
-#---- Utility functions ----
-
-
-#' Estimate the PRODES year of the given date.
-#'
-#' @param x A date.
-#' @param start_month The month when the year starts.
-#' @param start_day   The day when the year starts.
-#'
-#' @return            An integer. The PRODES's year.
-#'
-to_year_prodes <- function(x, start_month = "08", start_day = "01") {
-    stopifnot("At least a date is expected!" = length(x) != 0)
-    stopifnot("Date object expected!" = lubridate::is.Date(x))
-    if (length(x) > 1) {
-        return(vapply(x,  FUN = to_year_prodes,  FUN.VALUE = integer(1)))
-    }
-    y <- as.integer(format(as.Date(x, format = "%d/%m/%Y"),"%Y"))
-    start_year <- paste(y, start_month, start_day, sep = "-")
-    if (x >= start_year)
-        return(as.integer(y + 1))
-    return(y)
-}
-
-
-
-#' Estimate the number of days since the start of the PRODES year.
-#'
-#' @param x A date.
-#' @param start_month The month when the year starts.
-#' @param start_day   The day when the year starts.
-#'
-#' @return            An integer.
-#'
-to_doy_prodes <- function(x, start_month = "08", start_day = "01") {
-    stopifnot("At least a date is expected!" = length(x) != 0)
-    stopifnot("Date object expected!" = lubridate::is.Date(x))
-    if (length(x) > 1) {
-        return(vapply(x,  FUN = to_doy_prodes,  FUN.VALUE = integer(1)))
-    }
-    y <- as.integer(format(as.Date(x, format = "%d/%m/%Y"),"%Y"))
-    m <- as.integer(format(as.Date(x, format = "%d/%m/%Y"),"%m"))
-    start_year <- paste(y, start_month, start_day, sep = "-")
-    if (m < as.integer(start_month))
-        start_year <- paste(y - 1, start_month, start_day, sep = "-")
-    return(as.integer(difftime(x, start_year, units = "days")))
-}
-
-
 
 #---- DETER clean and save data ----
 
@@ -114,8 +64,7 @@ if (!file.exists(deter_clean_file)) {
                       area_km2 = units::drop_units(sf::st_area(.) / (1000^2)),
                       year = to_year_prodes(VIEW_DATE)) %>%
     # Save to disc.
-        sf::write_sf(paste0(tools::file_path_sans_ext(deter_file),
-                            "_valid.shp"))
+        sf::write_sf(deter_clean_file)
 }
 
 
@@ -455,7 +404,7 @@ if (!file.exists(deter_self_inter_file)) {
         # One meter in degrees at the equator on a WGS84 ellipsoid (approx.).
         #sf::st_set_precision(1 / 6378137) %>%
         # NOTE: Any other precisions are omitting polygons!
-        sf::st_set_precision(0) %>%
+        #sf::st_set_precision(0) %>%
         # TODO: Should I intersect only Burned Area polygons?
         sf::st_intersection() %>%
         sf::st_collection_extract(type = "POLYGON") %>%
@@ -472,7 +421,8 @@ if (!file.exists(deter_self_inter_file)) {
 deter_self_inter %>%
     sf::st_drop_geometry() %>%
     select(n.overlaps, origins)
-###############################################################################
+# TODO: Check deter_self_intersection.R
+##############################################################################
 
 
 
