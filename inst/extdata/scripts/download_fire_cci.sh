@@ -14,7 +14,7 @@ OUT_DIR="${HOME}/data/fire_cci"
 URL="https://dap.ceda.ac.uk/neodc/esacci/fire/data/burned_area/MODIS/pixel/v5.1/compressed/"
 
 wget -e robots=off -m -np -R .html,.tmp -nH -U mozilla -nH --cut-dirs=4 -P "${OUT_DIR}" -t 5 -A '*AREA_2*.tar.gz' ${URL}
-wget -e robots=off -m -np -R .html,.tmp -nH -U mozilla -nH --cut-dirs=4 -P "${OUT_DIR}" -t 5 -A 'README*'         ${URL}
 wget -e robots=off -m -np -R .html,.tmp -nH -U mozilla -nH --cut-dirs=4 -P "${OUT_DIR}" -t 5 -A '*.pdf'           ${URL}
+wget -e robots=off -m -np -R .html,.tmp -nH -U mozilla -nH --cut-dirs=4 -P "${OUT_DIR}" -t 5 -A '*.txt'           ${URL}
 
 exit 0
