@@ -42,9 +42,70 @@ to_doy_prodes <- function(x, start_month = "08", start_day = "01") {
     return(as.integer(difftime(x, start_year, units = "days")))
 }
 
-fix_geom_s2 <- function(data_sf) {
+
+
+#' Fix the geometries of an SF object. If invalid geometries remain, filter
+#' them out.
+#'
+#' @param data_sf an SF object.
+#' @return        an SF object.
+fix_geom_sf <- function(data_sf) {
     stopifnot("sf object expected" = inherits(data_sf, "sf"))
     data_sf %>%
-slice(1:10000) %>%
-        dplyr::mutate(is_valid_s2 = s2::s2_is_valid(.))
+    sf::st_make_valid() %>%
+    dplyr::mutate(is_valid = sf::st_is_valid(.)) %>%
+    dplyr::filter(is_valid) %>%
+    dplyr::select(-is_valid) %>%
+    return()
 }
+
+
+
+fix_geom_s2 <- function(data_sf) {
+    stop ("Unfinished!")
+    stopifnot("sf object expected" = inherits(data_sf, "sf"))
+}
+
+
+
+#' Build a tibble with the names of the files in the given directory.
+#'
+#' @param dir       A path to a directory.
+#' @param pattern   A pattern for filtering files.
+#' @param col_names Names of the columns for splitting the file names.
+#' @param recursive Should it include files in subdirectories?
+#' @param separator Character used for splitting the file names.
+#' @return          A tibble.
+list_files <- function(dir, pattern, col_names, separator, recursive) {
+    dir %>%
+        list.files(pattern = pattern,
+                   full.names = TRUE,
+                   recursive = recursive) %>%
+        tibble::as_tibble() %>%
+        dplyr::rename(file_path = value) %>%
+        dplyr::mutate(
+            file_name = tools::file_path_sans_ext(basename(file_path))
+        ) %>%
+        tidyr::separate(col = file_name,
+                        into = col_names,
+                        sep = separator) %>%
+        return()
+}
+
+
+
+
+#' Set one meter precision on the given SF object. When the given object uses
+#' geographic coordines, the correcponding angle is computed using the small
+#' angle approximation using WGS84's semi-major axis.
+#'
+#' @param data_sf An SF object.
+#' @return        An SF object.
+set_meter_precison <- function(data_sf) {
+    data_sf <- sf::st_set_precision(data_sf, 1)
+    if (sf::st_is_longlat(data_sf)) {
+        data_sf <- sf::st_set_precision(data_sf, 1/6378137)
+    }
+    return(data_sf)
+}
+
