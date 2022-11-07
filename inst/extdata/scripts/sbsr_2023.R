@@ -122,7 +122,8 @@ warnings_by_subarea %>%
                          err_desc = "No area should have 0 area!")
 
 
-sum(deter_sf$area_ha)
+# NOTE: Shouldn't they have the same area?
+sum(deter_sf$area_ha) # TODO: remove overlapped areas from here!
 sum(warnings_by_subarea$area_ha)
 
 
