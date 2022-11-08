@@ -1,3 +1,5 @@
+stop("R can't run this. Use QGIS union operation instead.")
+
 library(dplyr)
 library(lwgeom)
 library(sf)
