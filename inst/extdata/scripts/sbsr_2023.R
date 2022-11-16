@@ -4,6 +4,8 @@
 #
 # Analize DETER's warnings in São Felix do Xingu.
 ###############################################################################
+stop("DEPRECATED. Use deter_warning_recurrence instead.R")
+
 
 library(dplyr)
 library(ensurer)
@@ -26,8 +28,6 @@ stopifnot("Base directory not found!" = dir.exists(base_dir))
 stopifnot("Out directory not found!" = dir.exists(out_dir))
 stopifnot("GeoPackage not found!" = file.exists(sbsr_gpk))
 
-
-
 # Categorize the warnings' area.
 area_breaks <- c(
     "0"        = 0,
@@ -41,6 +41,8 @@ area_breaks <- c(
     "1000 ha"   = 1000,
     "> 1000 ha" = Inf
 )
+
+save_figures <- FALSE
 
 
 
@@ -362,13 +364,17 @@ plot_deter_warnings_size_month <-
     ggplot2::scale_y_continuous(labels = scales::comma) +
     ggplot2::scale_colour_viridis_d()
 
-ggplot2::ggsave(
-    plot = plot_deter_warnings_size_month,
-    filename = file.path(out_dir, "deter_warnings_size_month.png"),
-    height = 105,
-    width = 148,
-    units = "mm"
-)
+
+if (interactive()) {
+}else{
+    ggplot2::ggsave(
+        plot = plot_deter_warnings_size_month,
+        filename = file.path(out_dir, "deter_warnings_size_month.png"),
+        height = 105,
+        width = 148,
+        units = "mm"
+    )
+}
 
 rm(plot_deter_warnings_size_month)
 
