@@ -13,7 +13,7 @@ library(dplyr)
 library(sf)
 library(units)
 library(stringr)
-
+library(treemapify)
 
 #---- Configuration ----
 
@@ -47,7 +47,8 @@ sf::sf_use_s2(FALSE)
 
 # NOTE:
 # - deter_id identifies the original DETER features.
-# - subarea_id identifies features afer applying QGIS' union operation.
+# - subarea_id identifies features afer applying QGIS' union operation and
+#   pre-processing.
 union_sf <- sf::read_sf(deter_gpk, layer = deter_lyr)
 union_sf["area_ha"] <- units::drop_units(sf::st_area(union_sf)) * 0.0001
 
@@ -98,6 +99,38 @@ plot_data <-
                   diff_days = as.vector(difftime(VIEW_DATE, last_VIEW_DATE,
                                                  units = "days"))) %>%
     dplyr::ungroup()
+
+
+
+#---- Plot area by number of warnings ----
+
+res =
+    plot_data %>%
+    dplyr::filter(area_ha > 0,
+                  !is.na(area_ha)) %>%
+    dplyr::group_by(xy_id) %>%
+    dplyr::summarize(n_warnings = dplyr::n(),
+                     area_ha = dplyr::first(area_ha),
+                     xy_id = dplyr::first(xy_id)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(area_type = cut(area_ha,
+                                  breaks = area_breaks,
+                                  labels = names(area_breaks)[-1])) %>%
+    dplyr::group_by(UF, year, area_type, n_warnings) %>%
+    dplyr::summarize(area_ha = sum(area_ha)) %>%
+    dplyr::ungroup() %>%
+    #dplyr::show_query()
+    tibble::as_tibble()
+
+res %>%
+    ggplot2::ggplot() +
+    treemapify::geom_treemap(ggplot2::aes(area = area_ha,
+                                          fill = area_type,
+                                          label = UF,
+                                          subgroup = n_warnings)) +
+    treemapify::geom_treemap_text(grow = T, reflow = T, colour = "black") +
+    ggplot2::facet_wrap(~year)
+
 
 
 
@@ -197,7 +230,7 @@ if (interactive()) {
     )
 }
 
-rm(plot_area_by_warnings_state, warnings_by_subarea)
+rm(plot_area_by_warnings_state)
 
 
 
@@ -238,5 +271,28 @@ plot_days_first_to_last <-
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 1,
                                                        hjust=1))
 
+if (interactive()) {
+    plot_days_first_to_last +
+        ggplot2::ggtitle(paste("Number of days from the first to the last",
+                               "DETER warnings",
+                               "Amazon by Brazilian state"))
+}else{
+    ggplot2::ggsave(
+        plot =  plot_days_first_to_last,
+        filename = file.path(out_dir, "plot_days_first_to_last.png"),
+        height = 210,
+        width = 297,
+        units = "mm"
+    )
+}
 
+rm(plot_days_first_to_last)
+
+
+
+
+#---- ----
+# 1 - Treemap area by type of warning by prodes year (facet)
+# 2 - points figure, x = area,  y = days-first-last, color = UF, symbol = warnings_type
+# 3 - Heat map - Number of warnings by area_type by state
 
