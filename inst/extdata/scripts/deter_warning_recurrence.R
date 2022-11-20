@@ -15,7 +15,9 @@ library(units)
 library(stringr)
 library(treemapify)
 library(forcats)
+library(ggplot2)
 library(ggsankey)
+
 
 
 #---- Configuration ----
@@ -182,12 +184,12 @@ plot_density_area_ndays <-
     #dplyr::show_query()
     tibble::as_tibble() %>%
     ggplot2::ggplot() +
-    ggplot2::geom_point(aes(x = diff_days,
-                            y = area_ha),
+    ggplot2::geom_point(ggplot2::aes(x = diff_days,
+                                     y = area_ha),
                         na.rm = TRUE) +
     ggplot2::geom_density_2d(ggplot2::aes(x = diff_days,
                                           y = area_ha,
-                                          coutour_var = "density"),
+                                          contour_var = "density"),
                              na.rm = TRUE) +
     ggplot2::scale_y_log10(labels = scales::comma) +
     ggplot2::facet_grid(rows = vars(UF),
@@ -258,10 +260,10 @@ for (i in unique(sort(plot_tb[["n_warnings"]]))) {
         ggsankey::geom_sankey_label() +
         ggplot2::theme(legend.position = "none") +
         ggplot2::labs(x = NULL)
-    # if (interactive()) {
-    #      my_plot +
-    #         ggplot2::ggtitle("Trajectory of subareas")
-    # }else{
+    if (interactive()) {
+         my_plot +
+            ggplot2::ggtitle("Trajectory of subareas")
+    }else{
         ggplot2::ggsave(
             plot = my_plot,
             filename = file.path(out_dir,
@@ -270,7 +272,7 @@ for (i in unique(sort(plot_tb[["n_warnings"]]))) {
             width = 297,
             units = "mm"
         )
-    # }
+    }
 }
 
 rm(my_plot)
@@ -311,7 +313,7 @@ plot_area_by_warnings <-
 
 if (interactive()) {
     plot_area_by_warnings +
-        ggplot2::ggtitle(paste("DETER area by subarea and number of
+        ggplot2::ggtitle(paste("DETER area by subarea and number of",
                                "warnings in the Brazilian Amazon"))
 }else{
     ggplot2::ggsave(
