@@ -5,6 +5,8 @@
 # - input data is a QGIS geopackage with DETER warnings after running
 #   fix_geometries, multi to single part, union, and multi to single part
 #    (again) operations.
+# TODO:
+# - Time to PRODES
 ###############################################################################
 
 library(data.table)
@@ -17,6 +19,7 @@ library(treemapify)
 library(forcats)
 library(ggplot2)
 library(ggsankey)
+library(terra)
 
 
 
@@ -26,10 +29,13 @@ base_dir <- "~/Documents/trees_lab/deter_warning_recurrence"
 out_dir <- file.path(base_dir, "img")
 deter_gpk <- "/home/alber/Documents/data/deter/amazonia_legal/deter.gpkg"
 deter_lyr <- "deter_public_fix_m2s_union_m2s"
+prodes_raster <- "~/Documents/data/prodes/amazonia/PDigital2000_2021_AMZ_raster_v20220915_bioma.tif"
+
 
 stopifnot("Base directory not found!" = dir.exists(base_dir))
 stopifnot("Out directory not found!" = dir.exists(out_dir))
 stopifnot("GeoPackage not found!" = file.exists(deter_gpk))
+stopifnot("DETER raster not found!" = file.exists(prodes_raster))
 
 # Categorize the warnings' area.
 area_breaks <- c(
@@ -219,65 +225,6 @@ if (interactive()) {
 
 
 
-#---- Sankey: Trajectories of subareas ----
-
-plot_tb <-
-    plot_data %>%
-    dplyr::filter(area_ha > 3,
-                  !is.na(area_ha),
-                  diff_days > 0,
-                  !is.na(diff_days),
-                  !is.na(CLASSNAME),
-                  !is.na(last_CLASSNAME)) %>%
-    dplyr::mutate(CLASSNAME = dplyr::recode(CLASSNAME, !!!deter_classes),
-                  last_CLASSNAME = dplyr::recode(last_CLASSNAME,
-                                                 !!!deter_classes)) %>%
-    dplyr::group_by(xy_id) %>%
-    dplyr::mutate(subarea_pos = stringr::str_c("pos_",
-                                               dplyr::row_number()),
-                  n_warnings = dplyr::n()) %>%
-    dplyr::select(xy_id, CLASSNAME, subarea_pos, area_ha, n_warnings) %>%
-    tidyr::pivot_wider(names_from = subarea_pos, values_from = CLASSNAME) %>%
-    dplyr::filter(n_warnings > 1) %>%
-    tibble::as_tibble()
-
-# TODO: Make sankey use the variable area_ha
-for (i in unique(sort(plot_tb[["n_warnings"]]))) {
-    my_plot <-
-        plot_tb %>%
-        dplyr::filter(n_warnings == i) %>%
-        dplyr::select_if(~!all(is.na(.))) %>%
-        ggsankey::make_long(tidyselect::starts_with("pos_")) %>%
-        ggplot2::ggplot(ggplot2::aes(x = x,
-                                     next_x = next_x,
-                                     node = node,
-                                     next_node = next_node,
-                                     fill = factor(node),
-                                     label = node)) +
-        ggsankey::geom_sankey() +
-        ggsankey::theme_sankey(base_size = 16) +
-        ggsankey::geom_sankey(flow.alpha = .6, node.color = "gray30") +
-        ggsankey::geom_sankey_label() +
-        ggplot2::theme(legend.position = "none") +
-        ggplot2::labs(x = NULL)
-    if (interactive()) {
-         my_plot +
-            ggplot2::ggtitle("Trajectory of subareas")
-    }else{
-        ggplot2::ggsave(
-            plot = my_plot,
-            filename = file.path(out_dir,
-                         paste0("plot_subarea_trajectory_", i, ".png")),
-            height = 210,
-            width = 297,
-            units = "mm"
-        )
-    }
-}
-
-rm(my_plot)
-rm(plot_tb)
-
 
 
 #---- Plot DETER subareas by number of warnings ----
@@ -436,10 +383,100 @@ rm(plot_days_first_to_last)
 
 
 
+#---- Sankey: Trajectories of subareas ----
 
+# Get unique DETER poligons.
+unique_xy <-
+    plot_data %>%
+    dplyr::select(xy_id, subarea_id) %>%
+    dplyr::group_by(xy_id) %>%
+    dplyr::summarize(n_warnings = dplyr::n(),
+                     subarea_id = dplyr::first(subarea_id)) %>%
+    dplyr::ungroup() %>%
+    tibble::as_tibble()
+unique_xy  <-
+    union_sf %>%
+    dplyr::right_join(unique_xy, by = "subarea_id")
 
-#---- ----
-# 2 - points figure, x = area,  y = days-first-last, color = UF, symbol = warnings_type
-# 3 - Heat map - Number of warnings by area_type by state
-# 4 - Time to PRODES
+#' Compute the vector's mode.
+#'
+#' @param x A vector.
+#' @return  A vector.
+the_mode <- function(x) {
+    x <- x[!is.na(x)]
+    ux <- unique(x)
+    ux[which.max(tabulate(match(x, ux)))]
+}
+
+# Get the PRODES mode in each subarea.
+subarea_prodes <-
+    terra::extract(x = prodes_r,
+                   y = terra::vect(unique_xy["xy_id"]),
+                   fun = the_mode,
+                   ID = TRUE,
+                   weights = FALSE,
+                   exact = FALSE,
+                   touches = FALSE,
+                   bind = FALSE,
+                   raw = FALSE)
+
+# TODO: Recode subarea_prodes' PRODES codes to PRODES years.
+# TODO: Join suabrea_prodes to plot_tb and compute again Sankey's.
+
+plot_tb <-
+    plot_data %>%
+    dplyr::filter(area_ha > 3,
+                  !is.na(area_ha),
+                  diff_days > 0,
+                  !is.na(diff_days),
+                  !is.na(CLASSNAME),
+                  !is.na(last_CLASSNAME)) %>%
+    dplyr::mutate(CLASSNAME = dplyr::recode(CLASSNAME, !!!deter_classes),
+                  last_CLASSNAME = dplyr::recode(last_CLASSNAME,
+                                                 !!!deter_classes)) %>%
+    dplyr::group_by(xy_id) %>%
+    dplyr::mutate(subarea_pos = stringr::str_c("pos_",
+                                               dplyr::row_number()),
+                  n_warnings = dplyr::n()) %>%
+    dplyr::select(xy_id, CLASSNAME, subarea_pos, area_ha, n_warnings) %>%
+    tidyr::pivot_wider(names_from = subarea_pos, values_from = CLASSNAME) %>%
+    dplyr::filter(n_warnings > 1) %>%
+    tibble::as_tibble()
+
+# TODO: Make sankey use the variable area_ha
+for (i in unique(sort(plot_tb[["n_warnings"]]))) {
+    my_plot <-
+        plot_tb %>%
+        dplyr::filter(n_warnings == i) %>%
+        dplyr::select_if(~!all(is.na(.))) %>%
+        ggsankey::make_long(tidyselect::starts_with("pos_")) %>%
+        ggplot2::ggplot(ggplot2::aes(x = x,
+                                     next_x = next_x,
+                                     node = node,
+                                     next_node = next_node,
+                                     fill = factor(node),
+                                     label = node)) +
+        ggsankey::geom_sankey() +
+        ggsankey::theme_sankey(base_size = 16) +
+        ggsankey::geom_sankey(flow.alpha = .6, node.color = "gray30") +
+        ggsankey::geom_sankey_label() +
+        ggplot2::theme(legend.position = "none") +
+        ggplot2::labs(x = NULL)
+    if (interactive()) {
+         my_plot +
+            ggplot2::ggtitle("Trajectory of subareas")
+    }else{
+        ggplot2::ggsave(
+            plot = my_plot,
+            filename = file.path(out_dir,
+                         paste0("plot_subarea_trajectory_", i, ".png")),
+            height = 210,
+            width = 297,
+            units = "mm"
+        )
+    }
+}
+
+rm(my_plot)
+rm(plot_tb)
 
