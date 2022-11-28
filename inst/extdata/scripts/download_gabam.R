@@ -23,6 +23,7 @@ cells <- c("N00W080", "N00W070", "N00W060", "N00W050", "N00W040",
            "S30W080", "S30W070", "S30W060", "S30W050", "S30W040",
            "S40W080", "S40W070", "S40W060", "S40W050", "S40W040")
 
+time_out <- 3600 * 3
 
 
 #---- Utilitary funcitons ----
@@ -51,7 +52,7 @@ gabam_download <- function(year, cell, out_dir){
             }
         }
     }
-    curl::multi_run(timeout = 600)
+    curl::multi_run(timeout = time_out)
 }
 
 
