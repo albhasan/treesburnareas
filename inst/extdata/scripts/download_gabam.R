@@ -8,6 +8,7 @@
 library(curl)
 library(tibble)
 library(dplyr)
+library(purrr)
 
 
 
@@ -15,7 +16,7 @@ library(dplyr)
 
 out_dir <- "/home/alber/data/gabam/"
 
-years <- 1985:2022
+years <- 1985:2024
 
 cells <- c("N00W080", "N00W070", "N00W060", "N00W050", "N00W040",
            "S10W080", "S10W070", "S10W060", "S10W050", "S10W040",
@@ -24,6 +25,7 @@ cells <- c("N00W080", "N00W070", "N00W060", "N00W050", "N00W040",
            "S40W080", "S40W070", "S40W060", "S40W050", "S40W040")
 
 time_out <- 3600 * 3
+
 
 
 #---- Utilitary funcitons ----
@@ -55,12 +57,28 @@ gabam_download <- function(year, cell, out_dir){
     curl::multi_run(timeout = time_out)
 }
 
+#' Count the number of files in the given directory.
+#'
+#' @param path A character.
+#' @return     A numeric.
+count_files <- function(path) {
+    path %>%
+        list.files(recursive = TRUE) %>%
+    length() %>%
+    return()
+}
 
-# Download data.
+
+
+#---- Download data ----
+
 gabam_download(years, cells, out_dir)
 
 
-# Cleaning.
+
+#---- Cleaning ----
+
+# Remove 0-size files.
 out_dir %>%
     list.files(pattern = "*.(TIF|tif)",
                recursive = TRUE,
@@ -71,4 +89,14 @@ out_dir %>%
     dplyr::filter(file_size == 0) %>%
     dplyr::pull(file_path) %>%
     file.remove()
+
+# Remove empty directories.
+out_dir %>%
+    list.dirs() %>%
+    tibble::as_tibble() %>%
+    dplyr::rename("dir_path" = value) %>%
+    dplyr::mutate(file_count = purrr::map_int(dir_path, count_files)) %>%
+    dplyr::filter(dir_path != out_dir, file_count == 0) %>%
+    dplyr::pull(dir_path) %>%
+    unlink(recursive = TRUE)
 
