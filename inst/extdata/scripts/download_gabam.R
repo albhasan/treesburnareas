@@ -15,7 +15,7 @@ library(dplyr)
 
 out_dir <- "/home/alber/data/gabam/"
 
-years <- 2015:2022
+years <- 1985:2022
 
 cells <- c("N00W080", "N00W070", "N00W060", "N00W050", "N00W040",
            "S10W080", "S10W070", "S10W060", "S10W050", "S10W040",
