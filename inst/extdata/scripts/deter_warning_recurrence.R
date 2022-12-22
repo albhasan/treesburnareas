@@ -23,6 +23,7 @@ library(stringr)
 library(terra)
 library(tibble)
 library(treemapify)
+library(tidyr)
 library(units)
 
 
@@ -99,11 +100,11 @@ prodes_classes <- c("54" =  "r2014",
                     "19" =  "d2019",
                     "21" =  "d2021",
                      "8" =  "d2008",
-                    "91" =  "Water",        # Hidrografia
-                    "32" =  "Clouds",       # Nuvem
-                   "101" =  "Non-forest",   # NaoFloresta
+                    "91" =  "P_Water",        # Hidrografia
+                    "32" =  "P_Clouds",       # Nuvem
+                   "101" =  "P_Non-forest",   # NaoFloresta
                      "7" =  "d2007 (mask)", # d2007 (mascara)
-                   "100" =  "Forest")       # Floresta
+                   "100" =  "P_Forest")       # Floresta
 
 # NOTE: These are temporal files.
 subarea_prodes_file <- file.path(out_dir, "subarea_prodes.rds")
@@ -461,23 +462,25 @@ plot_tb <-
     subarea_dt %>%
     dplyr::filter(area_ha > 3 | is.na(area_ha),
                   !is.na(CLASSNAME)) %>%
-    dplyr::arrange(xy_id, VIEW_DATE) %>%
+    dplyr::arrange(xy_id, VIEW_DATE_est) %>%
     dplyr::group_by(xy_id) %>%
     dplyr::mutate(CLASSNAME = dplyr::if_else(
                       stringr::str_starts(CLASSNAME, "d"),
-                      "PRODES_def",
+                      "P_deforestation",
                       CLASSNAME
                   ),
                   CLASSNAME = dplyr::if_else(
                       stringr::str_starts(CLASSNAME, "r"),
-                      "PRODES_res",
+                      "P_residue",
                       CLASSNAME
                   ),
                   last_CLASSNAME = dplyr::lag(CLASSNAME),
-                  last_VIEW_DATE = dplyr::lag(VIEW_DATE),
-                  diff_days = as.vector(difftime(VIEW_DATE, last_VIEW_DATE,
+                  last_VIEW_DATE = dplyr::lag(VIEW_DATE_est),
+                  diff_days = as.vector(difftime(VIEW_DATE_est,
+                                                 last_VIEW_DATE_est,
                                                  units = "days")),
                   n_warn_p = dplyr::n()) %>%
+    tidyr::fill(area_ha, .direction = "downup") %>%
     dplyr::ungroup() %>%
     dplyr::select(area_ha, diff_days,
                   CLASSNAME, last_CLASSNAME,
@@ -485,8 +488,11 @@ plot_tb <-
     #dplyr::filter(diff_days > 0 | is.na(diff_days)) %>%
     data.table::as.data.table()
 
+
 # TODO: Make sankey use the variable area_ha
 for (i in sort(unique(plot_tb$n_warn_p))) {
+    if (i == 1)
+        next
 
     my_plot <-
         plot_tb %>%
@@ -528,6 +534,7 @@ for (i in sort(unique(plot_tb$n_warn_p))) {
             ggplot2::ggtitle("Trajectory of subareas")
     }
 }
+
 
 rm(my_plot)
 rm(plot_tb)
