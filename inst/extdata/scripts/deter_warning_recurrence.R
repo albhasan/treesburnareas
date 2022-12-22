@@ -7,19 +7,23 @@
 #    (again) operations.
 # TODO:
 # - Time to PRODES
-###############################################################################
+# - Run Sankey by state.
+# - Convert trajectories back to shapefile.
+# - Add Amazonia Legal to maps
+# - Download SHP fire calendar from ZENODO by Nathalia Carvalho.
+# - Download  GWIS (ask Guilherme).
 
 library(data.table)
-library(dtplyr)
 library(dplyr)
-library(sf)
-library(units)
-library(stringr)
-library(treemapify)
 library(forcats)
 library(ggplot2)
 library(ggsankey)
+library(magrittr)
+library(stringr)
 library(terra)
+library(tibble)
+library(treemapify)
+library(units)
 
 
 
@@ -27,15 +31,20 @@ library(terra)
 
 base_dir <- "~/Documents/trees_lab/deter_warning_recurrence"
 out_dir <- file.path(base_dir, "img")
-deter_gpk <- "/home/alber/Documents/data/deter/amazonia_legal/deter.gpkg"
-deter_lyr <- "deter_public_fix_m2s_union_m2s"
-prodes_raster <- "~/Documents/data/prodes/amazonia/PDigital2000_2021_AMZ_raster_v20220915_bioma.tif"
+save_figs <- TRUE
 
+deter_lyr <- "deter_public_fix_m2s_union_m2s"
+deter_gpk       <- "~/Documents/data/deter/amazonia_legal/deter.gpkg"
+prodes_raster   <- "~/Documents/data/prodes/amazonia/prodes_raster.tif"
+prodes_viewdate <- "~/Documents/data/prodes/amazonia/prodes_viewdate.tif"
 
 stopifnot("Base directory not found!" = dir.exists(base_dir))
 stopifnot("Out directory not found!" = dir.exists(out_dir))
 stopifnot("GeoPackage not found!" = file.exists(deter_gpk))
-stopifnot("DETER raster not found!" = file.exists(prodes_raster))
+stopifnot("PRODES raster not found! Use script process_prodes.R" =
+          file.exists(prodes_raster))
+stopifnot("PRODES view dates raster not found! Use script procss_prodes.R" =
+          file.exists(prodes_viewdate))
 
 # Categorize the warnings' area.
 area_breaks <- c(
@@ -62,207 +71,328 @@ deter_classes <- c(
     "MINERACAO"            = "Mining"
 )
 
+# NOTE: Obtained from the text file
+#       PDigital2000_2021_AMZ_raster_v20220915_bioma.txt
+prodes_classes <- c("54" =  "r2014",
+                    "52" =  "r2012",
+                    "61" =  "r2021",
+                    "53" =  "r2013",
+                    "58" =  "r2018",
+                    "57" =  "r2017",
+                    "51" =  "r2011",
+                    "60" =  "r2020",
+                    "56" =  "r2016",
+                    "50" =  "r2010",
+                    "59" =  "r2019",
+                    "55" =  "r2015",
+                    "12" =  "d2012",
+                    "14" =  "d2014",
+                    "13" =  "d2013",
+                    "11" =  "d2011",
+                    "10" =  "d2010",
+                     "9" =  "d2009",
+                    "15" =  "d2015",
+                    "17" =  "d2017",
+                    "18" =  "d2018",
+                    "16" =  "d2016",
+                    "20" =  "d2020",
+                    "19" =  "d2019",
+                    "21" =  "d2021",
+                     "8" =  "d2008",
+                    "91" =  "Water",        # Hidrografia
+                    "32" =  "Clouds",       # Nuvem
+                   "101" =  "Non-forest",   # NaoFloresta
+                     "7" =  "d2007 (mask)", # d2007 (mascara)
+                   "100" =  "Forest")       # Floresta
+
+# NOTE: These are temporal files.
+subarea_prodes_file <- file.path(out_dir, "subarea_prodes.rds")
+subarea_prodes_date_file <- file.path(out_dir, "subarea_prodes_date.rds")
+
+source("./deter_warnings_recurrence_util.R")
+
 sf::sf_use_s2(FALSE)
+
 
 
 #---- Load data ----
 
 # NOTE:
 # - deter_id identifies the original DETER features.
+# - subarea is what we call each of the subareas of each DETER warning which
+#   overlaps with some other subarea of other warnings.
 # - subarea_id identifies features afer applying QGIS' union operation and
 #   pre-processing.
-union_sf <- sf::read_sf(deter_gpk, layer = deter_lyr)
-union_sf["area_ha"] <- units::drop_units(sf::st_area(union_sf)) * 0.0001
 
-# Keep the geometry separated and handle data as a data.table.
-union_dt <- data.table::setDT(sf::st_drop_geometry(union_sf),,
-                              key = c("subarea_id", "VIEW_DATE"))
-union_dt <- dtplyr::lazy_dt(union_dt,
-                            key_by = c(subarea_id, VIEW_DATE),
-                            immutable = FALSE)
-union_sf <- union_sf["subarea_id"]
+# Keep the geometry separated form the data handle it as a data.table.
+subarea_sf <-
+    deter_gpk %>%
+    sf::read_sf(layer = deter_lyr) %>%
+    dplyr::mutate( area_ha = units::drop_units(sf::st_area(.) * 0.0001)) %>%
+    dplyr::filter(!is.na(area_ha),
+                  area_ha > 0) %>%
+    sf::st_cast(to = "POLYGON")
 
-# Build an ID based on coordinates and area.
-union_dt <-
-    union_dt %>%
-    dplyr::mutate(x = round(x, digits = 10),
-                  y = round(y, digits = 10),
-                  xy_id = stringr::str_c(x, y, sep = ";")) %>%
-    dplyr::select(-x, -y)
+subarea_dt <-
+    subarea_sf %>%
+    sf::st_drop_geometry() %>%
+    data.table::setDT(key = c("subarea_id", "VIEW_DATE"))
 
-# Compute the PRODES year.
-union_dt <-
-    union_dt %>%
-    dplyr::mutate(start_date = as.Date(paste(year(VIEW_DATE), "08", "01",
-                                             sep = "-"))) %>%
-    dplyr::mutate(year = dplyr::if_else(VIEW_DATE > start_date,
-                                        as.integer(year(start_date)) + 1,
-                                        as.integer(year(start_date)))) %>%
-    dplyr::select(-start_date)
+subarea_sf <- subarea_sf %>%
+    dplyr::select(subarea_id)
 
-# Filter
-union_dt <-
-    union_dt %>%
-    dplyr::filter(year < 2022)
+rm(deter_lyr)
+rm(deter_gpk)
+
+# Build an ID based on coordinates.
+# Recode DETER classes.
+# Compute PRODES year.
+# Filter out DETER warnigs before 2022.
+# Sort by subarea and date.
+subarea_dt <-
+    subarea_dt %>%
+    dplyr::mutate(
+        x = round(x, digits = 10),
+        y = round(y, digits = 10),
+        xy_id = stringr::str_c(x, y, sep = ";"),
+        CLASSNAME = dplyr::recode(CLASSNAME, !!!deter_classes,
+                                  .default = NA_character_,
+                                  .missing = NA_character_),
+        CLASSNAME = forcats::fct_relevel(CLASSNAME, sort),
+        start_date = as.Date(paste(year(VIEW_DATE), "08", "01", sep = "-")),
+        year = dplyr::if_else(VIEW_DATE > start_date,
+                              as.double(year(start_date)) + 1,
+                              as.double(year(start_date))),
+        year = as.integer(year)) %>%
+    dplyr::select(-start_date, -x, -y) %>%
+    dplyr::filter(year < 2022) %>%
+    dplyr::arrange(xy_id, VIEW_DATE)
 
 
 
 #---- Prepare plot data ----
 
-plot_data <- dtplyr::lazy_dt(union_dt,
-                            key_by = c(xy_id, VIEW_DATE),
-                            immutable = TRUE)
-
-plot_data <-
-    plot_data %>%
-    dplyr::arrange(xy_id, VIEW_DATE) %>%
+# Get unique DETER subareas ids (ids of poligons without overlap).
+subarea_unique_tb <-
+    subarea_dt %>%
+    dplyr::select(xy_id, subarea_id) %>%
     dplyr::group_by(xy_id) %>%
-    dplyr::mutate(last_CLASSNAME = dplyr::lag(CLASSNAME),
-                  last_VIEW_DATE = dplyr::lag(VIEW_DATE),
-                  diff_days = as.vector(difftime(VIEW_DATE, last_VIEW_DATE,
-                                                 units = "days"))) %>%
-    dplyr::ungroup()
+    dplyr::summarize(n_warnings_deter = dplyr::n(),
+                     subarea_id = dplyr::first(subarea_id)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(row_id = dplyr::row_number()) %>%
+    tibble::as_tibble()
+
+subarea_unique_sf  <- merge(subarea_sf,
+                            subarea_unique_tb,
+                            by = "subarea_id",
+                            all.y = TRUE)
+
+stopifnot("NAs in the number of deter warnings found" =
+          sum(is.na(subarea_unique_sf$n_warnings_deter)) == 0)
+stopifnot("Expected more subareas than unique subareas" =
+          nrow(subarea_sf) >= nrow(subarea_unique_tb))
+
+# Get the PRODES' class mode in each subarea.
+if (file.exists(subarea_prodes_file)) {
+    subarea_prodes <- readRDS(subarea_prodes_file)
+} else {
+    # NOTE: This takes long!
+    subarea_prodes <-
+        terra::extract(x = terra::rast(prodes_raster),
+                       y = terra::vect(subarea_unique_sf["xy_id"]),
+                       fun = the_mode,
+                       ID = TRUE,
+                       weights = FALSE,
+                       exact = FALSE,
+                       touches = FALSE,
+                       bind = FALSE,
+                       raw = FALSE)
+    saveRDS(subarea_prodes, file = subarea_prodes_file)
+}
+
+stopifnot("Some PRODES data is missing" =
+          nrow(subarea_prodes) == nrow(subarea_unique_sf))
+
+# Get the PRODES' view date mode in each subarea.
+if (file.exists(subarea_prodes_date_file)) {
+    subarea_prodes_date <- readRDS(subarea_prodes_date_file)
+} else {
+    # NOTE: This takes long!
+    subarea_prodes_date <-
+        terra::extract(x = terra::rast(prodes_viewdate),
+                       y = terra::vect(subarea_unique_sf["xy_id"]),
+                       fun = the_mode,
+                       ID = TRUE,
+                       weights = FALSE,
+                       exact = FALSE,
+                       touches = FALSE,
+                       bind = FALSE,
+                       raw = FALSE)
+    saveRDS(subarea_prodes_date, file = subarea_prodes_date_file)
+}
+
+stopifnot("Some PRODES VIEWDATE data is missing" =
+          nrow(subarea_prodes_date) == nrow(subarea_unique_sf))
+
+sf::write_sf(subarea_unique_sf,
+             dsn = file.path(out_dir, "deter_warning_recurrence.gpkg"),
+             layer = "subarea_unique_sf")
+
+rm(subarea_unique_sf)
+rm(subarea_prodes_file)
+rm(subarea_prodes_date_file)
+rm(prodes_raster)
+rm(prodes_viewdate)
+
+# Recode subarea_prodes' PRODES codes to PRODES years.
+subarea_prodes <-
+    subarea_prodes %>%
+    tibble::as_tibble() %>%
+    magrittr::set_colnames(c("row_id", "prodes_code")) %>%
+    dplyr::mutate(row_id = as.integer(row_id),
+                  prodes_code = as.integer(prodes_code),
+                  prodes_name = dplyr::recode(prodes_code,
+                                              !!!prodes_classes, # )) %>%
+                                              .default = NA_character_,
+                                              .missing = NA_character_))
+
+# Recode subarea_prodes_date
+subarea_prodes_date <-
+    subarea_prodes_date %>%
+    tibble::as_tibble() %>%
+    magrittr::set_colnames(c("row_id", "prodes_date")) %>%
+    dplyr::mutate(row_id = as.integer(row_id),
+                  prodes_date = as.Date(prodes_date,
+                                        origin = "1970-01-01"))
+
+stopifnot(nrow(subarea_prodes) == nrow(subarea_unique_tb))
+stopifnot(nrow(subarea_prodes_date) == nrow(subarea_prodes))
+
+# Join PRODES class and viewdate.
+# Add the PRODES date estimated from CLASSNAME.
+subarea_prodes <-
+    subarea_prodes %>%
+    dplyr::left_join(subarea_prodes_date, by = "row_id") %>%
+    dplyr::right_join(subarea_unique_tb, by = "row_id") %>%
+    dplyr::select(-row_id, -subarea_id, -prodes_code) %>%
+    dplyr::rename(CLASSNAME = prodes_name,
+                  VIEW_DATE = prodes_date) %>%
+    dplyr::mutate(data_source = "PRODES",
+                  VIEW_DATE_est = dplyr::if_else(
+                      stringr::str_starts(CLASSNAME, "d"),
+                      stringr::str_c(stringr::str_sub(CLASSNAME, 2, 5),
+                                     "-08-01"),
+                      NA_character_),
+                  VIEW_DATE_est = lubridate::as_date(VIEW_DATE_est)) %>%
+    dplyr::filter(!is.na(CLASSNAME),
+                  !is.na(VIEW_DATE))
+
+stopifnot("Unique xy_ids expected" =
+          length(unique(subarea_prodes[["xy_id"]])) == nrow(subarea_prodes))
+
+rm(subarea_unique_tb)
+rm(subarea_prodes_date)
+
+
+# Difference between theoretical and actual VIEW_DATE of deforestation.
+# NOTE: The median is at most 14 days off from the theoretical PRODES VIEW_DATE.
+#       However the SD is up to 241 days, the minimum is 4759 days, and the
+#       maximum up to 732 days.
+# NOTE: Don't use the VIEW_DATE. Use the theoretical PRODES data of
+#       deforestation.
+subarea_prodes %>%
+    dplyr::filter(stringr::str_starts(CLASSNAME, "d")) %>%
+    dplyr::mutate(
+        view_diff = difftime(VIEW_DATE_est, VIEW_DATE, units = "days")
+    ) %>%
+    group_by(CLASSNAME) %>%
+    summarize(min = min(view_diff),
+              mean = mean(view_diff),
+              median = stats::median(view_diff),
+              max = max(view_diff),
+              sd = sd(view_diff)) %>%
+    knitr::kable()
+
+
+# Join subarea_prodes to DETER subareas.
+
+subarea_prodes <-
+    data.table::setDT(subarea_prodes,
+                      key = "xy_id")
+
+prodes_ids <-
+    subarea_prodes %>%
+    pull(xy_id)
+
+subarea_dt <-
+    subarea_dt %>%
+    dplyr::mutate(data_source = "DETER") %>%
+    tibble::as_tibble() %>%
+    dplyr::bind_rows(subarea_prodes) %>%
+    dplyr::filter(xy_id %in% prodes_ids)
+
+rm(prodes_ids)
+rm(subarea_prodes)
+
+subarea_dt <-
+    data.table::setDT(subarea_dt,
+                      key = "xy_id")
 
 
 
 #---- Treemap: DETER warning area by state, year, warning type and area ----
 
-plot_area_by_state_year_type_area <-
-    plot_data %>%
-    dplyr::filter(area_ha > 0,
-                  !is.na(area_ha)) %>%
-    dplyr::group_by(UF, CLASSNAME, year) %>%
-    dplyr::summarize(area_ha = sum(area_ha)) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(UF = forcats::fct_relevel(UF, sort),
-                  year = forcats::fct_relevel(as.character(year), sort),
-                  CLASSNAME = dplyr::recode(CLASSNAME, !!!deter_classes),
-                  CLASSNAME = forcats::fct_relevel(CLASSNAME, sort)) %>%
-    #dplyr::show_query()
-    tibble::as_tibble() %>%
-    ggplot2::ggplot(ggplot2::aes(area = area_ha,
-                                 fill = CLASSNAME,
-                                 label = sprintf("%1.1f ha", area_ha),
-                                 subgroup = UF,
-                                 subgroup2 = year)) +
-    treemapify::geom_treemap() +
-    treemapify::geom_treemap_subgroup_border(colour = "white", size = 10) +
-    treemapify::geom_treemap_subgroup2_border(colour = "white", size = 2) +
-    treemapify::geom_treemap_text(colour = "white", place = "centre",
-                                  size = 10, grow = FALSE) +
-    treemapify::geom_treemap_subgroup_text(place = "topleft", grow = FALSE,
-                                           alpha = 0.3, colour = "black",
-                                           fontface = "bold", size = 96) +
-    treemapify::geom_treemap_subgroup2_text(place = "centre", grow = FALSE,
-                                            alpha = 0.4, colour = "black",
-                                            fontface = "plain", size = 24) +
-    ggplot2::theme(legend.title = ggplot2::element_blank())
+plot_area_by_state_year_type <- get_plot_area_by_state_year_type(subarea_dt)
 
-if (interactive()) {
-    plot_area_by_state_year_type_area +
-        ggplot2::ggtitle(paste("Area of DETER warnings by state, year",
-                               "(PRODES), and type"))
-}else{
+if (save_figs) {
     ggplot2::ggsave(
-        plot = plot_area_by_state_year_type_area,
-        filename = file.path(out_dir, "plot_deter_area_by_state_pyear_type.png"),
+        plot = plot_area_by_state_year_type,
+        filename = file.path(out_dir,
+                             "plot_deter_area_by_state_pyear_type.png"),
         height = 210,
         width = 297,
         units = "mm"
     )
+} else {
+    plot_area_by_state_year_type +
+        ggplot2::ggtitle(paste("Area of DETER warnings by state, year",
+                               "(PRODES), and type"))
 }
+
+rm(plot_area_by_state_year_type)
 
 
 
 #---- Point density: DETER subareas by state, year, warning type and area ----
 
 # NOTE: This plot shows uses the CLASSNAME of the first DETER warning.
-plot_density_area_ndays <-
-    plot_data %>%
-    dplyr::filter(area_ha > 3,
-                  !is.na(area_ha),
-                  diff_days > 0,
-                  !is.na(diff_days),
-                  !is.na(last_CLASSNAME)) %>%
-    dplyr::mutate(UF = forcats::fct_relevel(UF, sort),
-                  CLASSNAME = dplyr::recode(CLASSNAME, !!!deter_classes),
-                  CLASSNAME = forcats::fct_relevel(CLASSNAME, sort)) %>%
-    #dplyr::show_query()
-    tibble::as_tibble() %>%
-    ggplot2::ggplot() +
-    ggplot2::geom_point(ggplot2::aes(x = diff_days,
-                                     y = area_ha),
-                        na.rm = TRUE) +
-    ggplot2::geom_density_2d(ggplot2::aes(x = diff_days,
-                                          y = area_ha,
-                                          contour_var = "density"),
-                             na.rm = TRUE) +
-    ggplot2::scale_y_log10(labels = scales::comma) +
-    ggplot2::facet_grid(rows = vars(UF),
-                        cols = vars(CLASSNAME)) +
-    ggplot2::geom_vline(xintercept = 365,  linetype = 3, color = "gray50") +
-    ggplot2::geom_vline(xintercept = 730,  linetype = 3, color = "gray50") +
-    ggplot2::geom_vline(xintercept = 1095, linetype = 3, color = "gray50") +
-    ggplot2::geom_vline(xintercept = 1460, linetype = 3, color = "gray50") +
-    ggplot2::geom_vline(xintercept = 1825, linetype = 3, color = "gray50") +
-    ggplot2::xlab("Number of days between warnings") +
-    ggplot2::ylab("Area (ha)")
+plot_density_area_ndays <- get_plot_density_area_ndays(subarea_dt)
 
-if (interactive()) {
-     plot_density_area_ndays +
-        ggplot2::ggtitle(paste("DETER area by subarea, state, first type, and",
-                               "number of days between warnings"))
-}else{
+if (save_figs) {
     ggplot2::ggsave(
         plot = plot_density_area_ndays,
         filename = file.path(out_dir,
-                     "plot_deter_subarea_density_by_state_first-type_nwarnings.png"),
+              "plot_deter_subarea_density_by_state_first-type_nwarnings.png"),
         height = 210,
         width = 297,
         units = "mm"
     )
+} else {
+     plot_density_area_ndays +
+        ggplot2::ggtitle(paste("DETER area by subarea, state, first type, and",
+                               "number of days between warnings"))
 }
 
+rm(plot_density_area_ndays)
 
 
 
+#---- Histogram DETER subareas by number of warnings ----
 
-#---- Plot DETER subareas by number of warnings ----
+plot_area_by_warnings <- get_plot_area_by_warnings(subarea_dt)
 
-plot_area_by_warnings <-
-    plot_data %>%
-    dplyr::filter(area_ha > 0,
-                  !is.na(area_ha)) %>%
-    dplyr::group_by(xy_id) %>%
-    dplyr::summarize(n_warnings = dplyr::n(),
-                     area_ha = dplyr::first(area_ha),
-                     xy_id = dplyr::first(xy_id)) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(area_type = cut(area_ha,
-                                  breaks = area_breaks,
-                                  labels = names(area_breaks)[-1])) %>%
-    dplyr::group_by(n_warnings, area_type) %>%
-    dplyr::summarize(area_ha = sum(area_ha)) %>%
-    dplyr::ungroup() %>%
-    #dplyr::show_query()
-    tibble::as_tibble() %>%
-    ggplot2::ggplot() +
-    ggplot2::geom_bar(ggplot2::aes(x = n_warnings,
-                                   y = area_ha,
-                                   fill = area_type),
-                      stat = "identity") +
-    ggplot2::xlab("Number of wanings.") +
-    ggplot2::ylab("Area (ha)") +
-    ggplot2::labs(fill = "Area less than") +
-    ggplot2::scale_y_continuous(labels = scales::comma) +
-    #ggplot2::scale_y_log10(labels = scales::comma) +
-    ggplot2::scale_colour_viridis_d()
-
-if (interactive()) {
-    plot_area_by_warnings +
-        ggplot2::ggtitle(paste("DETER area by subarea and number of",
-                               "warnings in the Brazilian Amazon"))
-}else{
+if (save_figs) {
     ggplot2::ggsave(
         plot = plot_area_by_warnings,
         filename = file.path(out_dir, "plot_deter_subarea_by_nwarnings.png"),
@@ -270,50 +400,21 @@ if (interactive()) {
         width = 297,
         units = "mm"
     )
+} else {
+    plot_area_by_warnings +
+        ggplot2::ggtitle(paste("DETER area by subarea and number of",
+                               "warnings in the Brazilian Amazon"))
 }
 
 rm(plot_area_by_warnings)
 
 
 
-#---- Plot DETER subareas by number of warnings by state ----
+#---- Histogram DETER subareas by number of warnings by state ----
 
-plot_area_by_warnings_state <-
-    plot_data %>%
-    dplyr::filter(area_ha > 0,
-                  !is.na(area_ha)) %>%
-    dplyr::group_by(xy_id) %>%
-    dplyr::summarize(n_warnings = dplyr::n(),
-                     area_ha = dplyr::first(area_ha),
-                     xy_id = dplyr::first(xy_id),
-                     UF = dplyr::first(UF)) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(area_type = cut(area_ha,
-                                  breaks = area_breaks,
-                                  labels = names(area_breaks)[-1])) %>%
-    dplyr::group_by(UF, n_warnings, area_type) %>%
-    dplyr::summarize(area_ha = sum(area_ha)) %>%
-    dplyr::ungroup() %>%
-    #dplyr::show_query()
-    tibble::as_tibble() %>%
-    ggplot2::ggplot() +
-    ggplot2::geom_bar(ggplot2::aes(x = n_warnings,
-                                   y = area_ha,
-                                   fill = area_type),
-                      stat = "identity") +
-    ggplot2::xlab("Number of wanings.") +
-    ggplot2::ylab("Area (ha)") +
-    ggplot2::labs(fill = "Area less than") +
-    ggplot2::scale_y_continuous(labels = scales::comma) +
-    #ggplot2::scale_y_log10(labels = scales::comma) +
-    ggplot2::scale_colour_viridis_d() +
-    ggplot2::facet_wrap(~UF, scales = "free")
+plot_area_by_warnings_state <- get_plot_area_by_warnings_state(subarea_dt)
 
-if (interactive()) {
-    plot_area_by_warnings_state +
-        ggplot2::ggtitle(paste("Area of DETER warnings by number of warnings",
-                               "and state"))
-}else{
+if (save_figs) {
     ggplot2::ggsave(
         plot = plot_area_by_warnings_state,
         filename = file.path(out_dir, "plot_area_by_warnings_state.png"),
@@ -321,55 +422,21 @@ if (interactive()) {
         width = 297,
         units = "mm"
     )
+} else {
+    plot_area_by_warnings_state +
+        ggplot2::ggtitle(paste("Area of DETER warnings by number of warnings",
+                               "and state"))
 }
 
 rm(plot_area_by_warnings_state)
 
 
 
-#---- Plot days between warnings by subarea ----
+#---- Boxplot days between warnings by subarea ----
 
-plot_days_first_to_last <-
-    plot_data %>%
-    dplyr::select(xy_id, diff_days, area_ha, UF) %>%
-    dplyr::group_by(xy_id) %>%
-    dplyr::summarize(n_warnings = dplyr::n(),
-                     area_ha = dplyr::first(area_ha),
-                     xy_id = dplyr::first(xy_id),
-                     UF = dplyr::first(UF),
-                     days_first_last = sum(diff_days, na.rm = TRUE)) %>%
-    dplyr::ungroup() %>%
-    dplyr::filter(n_warnings > 1,
-                  days_first_last > 0,
-                  area_ha > 3,
-                  !is.na(area_ha)) %>%
-    dplyr::mutate(area_type = cut(area_ha,
-                                  breaks = area_breaks,
-                                  labels = names(area_breaks)[-1])) %>%
-    dplyr::arrange(UF, area_type, days_first_last) %>%
-    tibble::as_tibble() %>%
-    ggplot2::ggplot() +
-    ggplot2::geom_boxplot(ggplot2::aes(x = area_type, y = days_first_last)) +
-    ggplot2::facet_grid(rows = vars(n_warnings),
-                        cols = vars(UF)) +
-    #ggplot2::xlab("Number of DETER warnings") +
-    ggplot2::xlab("") +
-    ggplot2::ylab("Days from first to last DETER warning") +
-    ggplot2::scale_y_continuous(labels = scales::comma) +
-    ggplot2::geom_hline(yintercept = 365,  linetype = 3, color = "gray50") +
-    ggplot2::geom_hline(yintercept = 730,  linetype = 3, color = "gray50") +
-    ggplot2::geom_hline(yintercept = 1095, linetype = 3, color = "gray50") +
-    ggplot2::geom_hline(yintercept = 1460, linetype = 3, color = "gray50") +
-    ggplot2::geom_hline(yintercept = 1825, linetype = 3, color = "gray50") +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 1,
-                                                       hjust=1))
+plot_days_first_to_last <- get_plot_days_first_to_last(subarea_dt)
 
-if (interactive()) {
-    plot_days_first_to_last +
-        ggplot2::ggtitle(paste("Number of days from the first to the last",
-                               "DETER warnings",
-                               "Amazon by Brazilian state"))
-}else{
+if (save_figs) {
     ggplot2::ggsave(
         plot =  plot_days_first_to_last,
         filename = file.path(out_dir, "plot_days_first_to_last.png"),
@@ -377,6 +444,11 @@ if (interactive()) {
         width = 297,
         units = "mm"
     )
+} else {
+    plot_days_first_to_last +
+        ggplot2::ggtitle(paste("Number of days from the first to the last",
+                               "DETER warnings",
+                               "Amazon by Brazilian state"))
 }
 
 rm(plot_days_first_to_last)
@@ -385,71 +457,50 @@ rm(plot_days_first_to_last)
 
 #---- Sankey: Trajectories of subareas ----
 
-# Get unique DETER poligons.
-unique_xy <-
-    plot_data %>%
-    dplyr::select(xy_id, subarea_id) %>%
-    dplyr::group_by(xy_id) %>%
-    dplyr::summarize(n_warnings = dplyr::n(),
-                     subarea_id = dplyr::first(subarea_id)) %>%
-    dplyr::ungroup() %>%
-    tibble::as_tibble()
-unique_xy  <-
-    union_sf %>%
-    dplyr::right_join(unique_xy, by = "subarea_id")
-
-#' Compute the vector's mode.
-#'
-#' @param x A vector.
-#' @return  A vector.
-the_mode <- function(x) {
-    x <- x[!is.na(x)]
-    ux <- unique(x)
-    ux[which.max(tabulate(match(x, ux)))]
-}
-
-# Get the PRODES mode in each subarea.
-subarea_prodes <-
-    terra::extract(x = prodes_r,
-                   y = terra::vect(unique_xy["xy_id"]),
-                   fun = the_mode,
-                   ID = TRUE,
-                   weights = FALSE,
-                   exact = FALSE,
-                   touches = FALSE,
-                   bind = FALSE,
-                   raw = FALSE)
-
-# TODO: Recode subarea_prodes' PRODES codes to PRODES years.
-# TODO: Join suabrea_prodes to plot_tb and compute again Sankey's.
-
 plot_tb <-
-    plot_data %>%
-    dplyr::filter(area_ha > 3,
-                  !is.na(area_ha),
-                  diff_days > 0,
-                  !is.na(diff_days),
-                  !is.na(CLASSNAME),
-                  !is.na(last_CLASSNAME)) %>%
-    dplyr::mutate(CLASSNAME = dplyr::recode(CLASSNAME, !!!deter_classes),
-                  last_CLASSNAME = dplyr::recode(last_CLASSNAME,
-                                                 !!!deter_classes)) %>%
+    subarea_dt %>%
+    dplyr::filter(area_ha > 3 | is.na(area_ha),
+                  !is.na(CLASSNAME)) %>%
+    dplyr::arrange(xy_id, VIEW_DATE) %>%
     dplyr::group_by(xy_id) %>%
-    dplyr::mutate(subarea_pos = stringr::str_c("pos_",
-                                               dplyr::row_number()),
-                  n_warnings = dplyr::n()) %>%
-    dplyr::select(xy_id, CLASSNAME, subarea_pos, area_ha, n_warnings) %>%
-    tidyr::pivot_wider(names_from = subarea_pos, values_from = CLASSNAME) %>%
-    dplyr::filter(n_warnings > 1) %>%
-    tibble::as_tibble()
+    dplyr::mutate(CLASSNAME = dplyr::if_else(
+                      stringr::str_starts(CLASSNAME, "d"),
+                      "PRODES_def",
+                      CLASSNAME
+                  ),
+                  CLASSNAME = dplyr::if_else(
+                      stringr::str_starts(CLASSNAME, "r"),
+                      "PRODES_res",
+                      CLASSNAME
+                  ),
+                  last_CLASSNAME = dplyr::lag(CLASSNAME),
+                  last_VIEW_DATE = dplyr::lag(VIEW_DATE),
+                  diff_days = as.vector(difftime(VIEW_DATE, last_VIEW_DATE,
+                                                 units = "days")),
+                  n_warn_p = dplyr::n()) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(area_ha, diff_days,
+                  CLASSNAME, last_CLASSNAME,
+                  xy_id, n_warn_p, data_source)  %>%
+    #dplyr::filter(diff_days > 0 | is.na(diff_days)) %>%
+    data.table::as.data.table()
 
 # TODO: Make sankey use the variable area_ha
-for (i in unique(sort(plot_tb[["n_warnings"]]))) {
+for (i in sort(unique(plot_tb$n_warn_p))) {
+
     my_plot <-
         plot_tb %>%
-        dplyr::filter(n_warnings == i) %>%
+        dplyr::filter(n_warn_p == i) %>%
+        dplyr::group_by(xy_id) %>%
+        dplyr::mutate(group_row = dplyr::row_number(),
+                      subarea_step = stringr::str_c("step_", group_row)) %>%
+        dplyr::ungroup() %>%
+        dplyr::select(xy_id, CLASSNAME, subarea_step, area_ha, n_warn_p) %>%
+        tidyr::pivot_wider(names_from = subarea_step,
+                           values_from = CLASSNAME) %>%
         dplyr::select_if(~!all(is.na(.))) %>%
-        ggsankey::make_long(tidyselect::starts_with("pos_")) %>%
+        dplyr::as_tibble() %>%
+        ggsankey::make_long(tidyselect::starts_with("step_")) %>%
         ggplot2::ggplot(ggplot2::aes(x = x,
                                      next_x = next_x,
                                      node = node,
@@ -462,10 +513,8 @@ for (i in unique(sort(plot_tb[["n_warnings"]]))) {
         ggsankey::geom_sankey_label() +
         ggplot2::theme(legend.position = "none") +
         ggplot2::labs(x = NULL)
-    if (interactive()) {
-         my_plot +
-            ggplot2::ggtitle("Trajectory of subareas")
-    }else{
+
+    if (save_figs) {
         ggplot2::ggsave(
             plot = my_plot,
             filename = file.path(out_dir,
@@ -474,6 +523,9 @@ for (i in unique(sort(plot_tb[["n_warnings"]]))) {
             width = 297,
             units = "mm"
         )
+    }else{
+         my_plot +
+            ggplot2::ggtitle("Trajectory of subareas")
     }
 }
 
