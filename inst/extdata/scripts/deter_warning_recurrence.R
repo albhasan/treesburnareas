@@ -169,6 +169,8 @@ subarea_dt <-
     dplyr::filter(year < 2022) %>%
     dplyr::arrange(xy_id, VIEW_DATE)
 
+# TODO: check
+subarea_dt %>% filter(xy_id == "-51.7596975442;-11.9129786069")
 
 
 #---- Prepare plot data ----
@@ -475,7 +477,7 @@ plot_tb <-
                       CLASSNAME
                   ),
                   last_CLASSNAME = dplyr::lag(CLASSNAME),
-                  last_VIEW_DATE = dplyr::lag(VIEW_DATE_est),
+                  last_VIEW_DATE_est = dplyr::lag(VIEW_DATE_est),
                   diff_days = as.vector(difftime(VIEW_DATE_est,
                                                  last_VIEW_DATE_est,
                                                  units = "days")),
@@ -505,6 +507,7 @@ for (i in sort(unique(plot_tb$n_warn_p))) {
         tidyr::pivot_wider(names_from = subarea_step,
                            values_from = CLASSNAME) %>%
         dplyr::select_if(~!all(is.na(.))) %>%
+        tidyr::drop_na() %>%
         dplyr::as_tibble() %>%
         ggsankey::make_long(tidyselect::starts_with("step_")) %>%
         ggplot2::ggplot(ggplot2::aes(x = x,
