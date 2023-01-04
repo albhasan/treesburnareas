@@ -5,6 +5,8 @@
 # - input data is a QGIS geopackage with DETER warnings after running
 #   fix_geometries, multi to single part, union, and multi to single part
 #    (again) operations.
+# - ggsankey isn't availabe at CRAN. Install it from github
+#   using this line of code devtools::install_github("davidsjoberg/ggsankey")
 # TODO:
 # - Time to PRODES
 # - Run Sankey by state.
