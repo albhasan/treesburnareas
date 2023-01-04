@@ -2,6 +2,7 @@
 # Exploratory analysis of burn scars in DETER
 #------------------------------------------------------------------------------
 # NOTE: This script creates the figures used in the slides.
+# NOTE: Burn scars don't match with the fire products.
 ###############################################################################
 
 library(dplyr)

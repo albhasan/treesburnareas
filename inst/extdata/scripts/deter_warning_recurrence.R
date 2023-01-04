@@ -8,6 +8,7 @@
 # TODO:
 # - Time to PRODES
 ###############################################################################
+#devtools::install_github("davidsjoberg/ggsankey")
 
 library(data.table)
 library(dtplyr)
@@ -409,6 +410,7 @@ the_mode <- function(x) {
 }
 
 # Get the PRODES mode in each subarea.
+prodes_r <- terra::rast(prodes_raster)
 subarea_prodes <-
     terra::extract(x = prodes_r,
                    y = terra::vect(unique_xy["xy_id"]),

@@ -150,13 +150,18 @@ plot_area_by_warnings <-
     ggplot2::scale_y_continuous(labels = scales::comma) +
     ggplot2::scale_colour_viridis_d()
 
-ggplot2::ggsave(
-    plot = plot_area_by_warnings,
-    filename = file.path(out_dir, "plot_area_by_warnings.png"),
-    height = 105,
-    width = 148,
-    units = "mm"
-)
+if (interactive()) {
+    plot_area_by_warnings +
+        ggplot2::ggtitle("Deter area by number of warnings.")
+}else{
+    ggplot2::ggsave(
+        plot = plot_area_by_warnings,
+        filename = file.path(out_dir, "plot_area_by_warnings.png"),
+        height = 105,
+        width = 148,
+        units = "mm"
+    )
+}
 
 rm(plot_area_by_warnings)
 
@@ -224,13 +229,18 @@ plot_days_between_warnings <-
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 1,
                                                        hjust=1))
 
-ggplot2::ggsave(
-    plot = plot_days_between_warnings,
-    filename = file.path(out_dir, "plot_days_between_warnings.png"),
-    height = 105,
-    width = 148,
-    units = "mm"
-)
+if (interactive()) {
+    plot_days_between_warnings +
+        ggplot2::ggtitle("Days between Deter warnings by area")
+}else{
+    ggplot2::ggsave(
+        plot = plot_days_between_warnings,
+        filename = file.path(out_dir, "plot_days_between_warnings.png"),
+        height = 105,
+        width = 148,
+        units = "mm"
+    )
+}
 
 rm(plot_days_between_warnings)
 
@@ -262,13 +272,18 @@ plot_days_first_to_last <-
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, vjust = 1,
                                                        hjust=1))
 
-ggplot2::ggsave(
-    plot = plot_days_first_to_last,,
-    filename = file.path(out_dir, "plot_days_first_to_last.png"),
-    height = 105,
-    width = 148,
-    units = "mm"
-)
+if (interactive()) {
+    plot_days_first_to_last +
+        ggplot2::ggtitle("Days from first to last Deter warnings by area")
+}else{
+    ggplot2::ggsave(
+        plot = plot_days_first_to_last,,
+        filename = file.path(out_dir, "plot_days_first_to_last.png"),
+        height = 105,
+        width = 148,
+        units = "mm"
+    )
+}
 
 rm(plot_days_first_to_last)
 
@@ -296,13 +311,18 @@ plot_deter_warnings_area_size <-
     ggplot2::scale_y_continuous(labels = scales::comma) +
     ggplot2::scale_colour_viridis_d()
 
-ggplot2::ggsave(
-    plot = plot_deter_warnings_area_size,
-    filename = file.path(out_dir, "deter_warnings_area_size.png"),
-    height = 105,
-    width = 148,
-    units = "mm"
-)
+if (interactive()) {
+    plot_deter_warnings_area_size +
+        ggplot2::ggtitle("Deter warnings by area, type and size")
+}else{
+    ggplot2::ggsave(
+        plot = plot_deter_warnings_area_size,
+        filename = file.path(out_dir, "deter_warnings_area_size.png"),
+        height = 105,
+        width = 148,
+        units = "mm"
+    )
+}
 
 rm(plot_deter_warnings_area_size)
 
@@ -330,13 +350,18 @@ plot_deter_warnings_size <-
     ggplot2::scale_y_continuous(labels = scales::comma) +
     ggplot2::scale_colour_viridis_d()
 
-ggplot2::ggsave(
-    plot = plot_deter_warnings_size,
-    filename = file.path(out_dir, "deter_warnings_size.png"),
-    height = 105,
-    width = 148,
-    units = "mm"
-)
+if (interactive()) {
+    plot_deter_warnings_size +
+        ggplot2::ggtitle("Deter warnings by type and size")
+}else{
+    ggplot2::ggsave(
+        plot = plot_deter_warnings_size,
+        filename = file.path(out_dir, "deter_warnings_size.png"),
+        height = 105,
+        width = 148,
+        units = "mm"
+    )
+}
 
 rm(plot_deter_warnings_size)
 
@@ -366,6 +391,8 @@ plot_deter_warnings_size_month <-
 
 
 if (interactive()) {
+    plot_deter_warnings_size_month +
+        ggplot2::ggtitle("Deter warnings by state, type, size, and month")
 }else{
     ggplot2::ggsave(
         plot = plot_deter_warnings_size_month,
