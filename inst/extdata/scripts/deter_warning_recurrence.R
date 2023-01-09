@@ -109,8 +109,8 @@ prodes_classes <- c("54" =  "r2014",
                    "100" =  "P_Forest")       # Floresta
 
 # NOTE: These are temporal files.
-subarea_prodes_file <- file.path(out_dir, "subarea_prodes.rds")
-subarea_prodes_date_file <- file.path(out_dir, "subarea_prodes_date.rds")
+subarea_prodes_file <- file.path(out_dir, "prodes_subarea.rds")
+subarea_prodes_date_file <- file.path(out_dir, "prodes_subarea_date.rds")
 
 source("./deter_warnings_recurrence_util.R")
 
@@ -422,7 +422,7 @@ plot_area_by_warnings_state <- get_plot_area_by_warnings_state(subarea_dt)
 if (save_figs) {
     ggplot2::ggsave(
         plot = plot_area_by_warnings_state,
-        filename = file.path(out_dir, "plot_area_by_warnings_state.png"),
+        filename = file.path(out_dir, "plot_deter_subarea_by_warnings_state.png"),
         height = 210,
         width = 297,
         units = "mm"
@@ -444,7 +444,7 @@ plot_days_first_to_last <- get_plot_days_first_to_last(subarea_dt)
 if (save_figs) {
     ggplot2::ggsave(
         plot =  plot_days_first_to_last,
-        filename = file.path(out_dir, "plot_days_first_to_last.png"),
+        filename = file.path(out_dir, "plot_deter_days_first_to_last.png"),
         height = 210,
         width = 297,
         units = "mm"
@@ -529,7 +529,7 @@ for (i in sort(unique(plot_tb$n_warn_p))) {
         ggplot2::ggsave(
             plot = my_plot,
             filename = file.path(out_dir,
-                         paste0("plot_subarea_trajectory_", i, ".png")),
+                         paste0("plot_deter_subarea_trajectory_", i, ".png")),
             height = 210,
             width = 297,
             units = "mm"
