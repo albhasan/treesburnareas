@@ -7,13 +7,16 @@
 #    (again) operations.
 # - ggsankey isn't availabe at CRAN. Install it from github
 #   using this line of code devtools::install_github("davidsjoberg/ggsankey")
+#
 # TODO:
-# - Time to PRODES
 # - Run Sankey by state.
 # - Convert trajectories back to shapefile.
 # - Add Amazonia Legal to maps
 # - Download SHP fire calendar from ZENODO by Nathalia Carvalho.
 # - Download  GWIS (ask Guilherme).
+#
+# DONE:
+# - Time to PRODES
 
 library(data.table)
 library(dplyr)
@@ -133,7 +136,8 @@ subarea_sf <-
     sf::read_sf(layer = deter_lyr) %>%
     dplyr::mutate( area_ha = units::drop_units(sf::st_area(.) * 0.0001)) %>%
     dplyr::filter(!is.na(area_ha),
-                  area_ha > 0) %>%
+                  area_ha > 0,
+                  legal_amazon == TRUE) %>%
     sf::st_cast(to = "POLYGON")
 
 subarea_dt <-
