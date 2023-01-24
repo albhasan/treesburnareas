@@ -9,14 +9,18 @@
 #   using this line of code devtools::install_github("davidsjoberg/ggsankey")
 #
 # TODO:
+# - Run again using the data from ~/Documents/data/deter/amazonia_legal/deter_grass.gpkg
 # - Run Sankey by state.
-# - Convert trajectories back to shapefile.
-# - Add Amazonia Legal to maps
 # - Download SHP fire calendar from ZENODO by Nathalia Carvalho.
 # - Download  GWIS (ask Guilherme).
+# - Compute table with areas by trajectory
+# - Create map and add to slides.
+# - Convert trajectories back to shapefile.
+# - Select some weird trajectories and add them to the slides.
 #
 # DONE:
 # - Time to PRODES
+# - Add Amazonia Legal to maps. NOTE: PRODES mask added.
 
 library(data.table)
 library(dplyr)
@@ -40,7 +44,7 @@ out_dir <- file.path(base_dir, "img")
 save_figs <- TRUE
 
 deter_lyr <- "deter_public_fix_m2s_union_m2s"
-deter_gpk       <- "~/Documents/data/deter/amazonia_legal/deter.gpkg"
+deter_gpk       <- "~/Documents/data/deter/amazonia_legal/deter_qgis.gpkg"
 prodes_raster   <- "~/Documents/data/prodes/amazonia/prodes_raster.tif"
 prodes_viewdate <- "~/Documents/data/prodes/amazonia/prodes_viewdate.tif"
 
@@ -134,7 +138,7 @@ sf::sf_use_s2(FALSE)
 subarea_sf <-
     deter_gpk %>%
     sf::read_sf(layer = deter_lyr) %>%
-    dplyr::mutate( area_ha = units::drop_units(sf::st_area(.) * 0.0001)) %>%
+    dplyr::mutate(area_ha = units::drop_units(sf::st_area(.) * 0.0001)) %>%
     dplyr::filter(!is.na(area_ha),
                   area_ha > 0,
                   legal_amazon == TRUE) %>%
