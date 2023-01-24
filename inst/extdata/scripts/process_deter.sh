@@ -1,9 +1,16 @@
 #!/bin/bash
 
 ###############################################################################
-# PRE-PROCESS DETER DATA BEFORE ANALYZING IT WITH R.
+# PRE-PROCESS DETER DATA USING GRASS GIS 
 #------------------------------------------------------------------------------
-# NOTE: Create the GPKG deter_grass.gpkg before calling this script.
+# NOTE: 
+# - Create the GPKG deter_grass.gpkg before calling this script.
+# - Run this script before running deter_warning_recurrence.R
+#------------------------------------------------------------------------------
+# TODO: 
+# - Create the missing fields in the table.
+# - Update other scripts using the old GPKG created with QGIS with the call to
+#   the GPKG created in this script.
 ###############################################################################
 
 
@@ -58,6 +65,9 @@ grass ${GRASS_DATA}/deter/PERMANENT --exec v.import input=${DETER_SHP} output=de
 #                            Cleaning up temporary files...
 #                            a
 
+# Add subarea_id: Enumerate each polygon. 
+grass ${GRASS_DATA}/deter/PERMANENT --exec db.execute sql="ALTER TABLE deter_public ADD COLUMN subarea_id integer"
+grass ${GRASS_DATA}/deter/PERMANENT --exec db.execute sql="UPDATE deter_public SET subarea_id=cat"
 
 # TODO:
 # - add the missing columns: 
@@ -69,13 +79,6 @@ grass ${GRASS_DATA}/deter/PERMANENT --exec v.import input=${DETER_SHP} output=de
 #   deter_id: Enumeration of the original DETER polygons. NOTE: It isn't needed
 #   subarea_area: Area of each polygon.  NOTE: It isn't needed.
 #   biome: Biome's name. NOTE: It isn't needed.
-
-
-# Add subarea_id: Enumerate each polygon. 
-grass ${GRASS_DATA}/deter/PERMANENT --exec db.execute sql="ALTER TABLE deter_public ADD COLUMN subarea_id integer"
-grass ${GRASS_DATA}/deter/PERMANENT --exec db.execute sql="UPDATE deter_public SET subarea_id=cat"
-
-#grass ${GRASS_DATA}/deter/PERMANENT --exec
 
 # Export the results.
 grass ${GRASS_DATA}/deter/PERMANENT --exec v.out.ogr -a input=deter_public type=area format=GPKG output=~/Documents/data/deter/amazonia_legal/deter_grass.gpkg output_layer=deter_public
