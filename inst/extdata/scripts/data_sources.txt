@@ -1,0 +1,7 @@
+Data sources reported by Guilherme Mataveli:
+
+MCD64A1              https://appeears.earthdatacloud.nasa.gov/
+Mapbiomas Fogo       https://code.earthengine.google.com/?scriptPath=users%2Fmapbiomas%2Fuser-toolkit%3Amapbiomas-user-toolkit-fire.js
+Fire CCI             https://data.ceda.ac.uk/neodc/esacci/fire/data/burned_area/MODIS/pixel/v5.1
+Focos MODIS ou VIIRS https://firms.modaps.eosdis.nasa.gov/active_fire/
+
