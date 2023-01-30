@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 ###############################################################################
 # Analysis of the recurrence of DETER warnings.
 #------------------------------------------------------------------------------
@@ -9,7 +11,7 @@
 #   using this line of code devtools::install_github("davidsjoberg/ggsankey")
 #
 # TODO:
-# - Run again using the data from ~/Documents/data/deter/amazonia_legal/deter_grass.gpkg
+# - Update to GRASS geopackage. Use the data from ~/Documents/data/deter/amazonia_legal/deter_grass.gpkg
 # - Run Sankey by state.
 # - Download SHP fire calendar from ZENODO by Nathalia Carvalho.
 # - Download  GWIS (ask Guilherme).
@@ -177,9 +179,12 @@ subarea_dt <-
         year = as.integer(year)) %>%
     dplyr::select(-start_date, -x, -y) %>%
     dplyr::filter(year < 2022) %>%
+    dplyr::distinct(xy_id, VIEW_DATE, .keep_all = TRUE) %>%
     dplyr::arrange(xy_id, VIEW_DATE)
 
 # TODO: check
+# NOTE: There were two rows of 20210630 with different MUNICIPALITY. I added
+#       a call to distinct by xy_id and VIEW_DATE.
 subarea_dt %>% filter(xy_id == "-51.7596975442;-11.9129786069")
 
 
@@ -308,7 +313,7 @@ rm(subarea_unique_tb)
 rm(subarea_prodes_date)
 
 
-# Difference between theoretical and actual VIEW_DATE of deforestation.
+print("Difference between theoretical and actual VIEW_DATE of deforestation:")
 # NOTE: The median is at most 14 days off from the theoretical PRODES VIEW_DATE.
 #       However the SD is up to 241 days, the minimum is 4759 days, and the
 #       maximum up to 732 days.
