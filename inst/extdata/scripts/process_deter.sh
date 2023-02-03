@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###############################################################################
-# PRE-PROCESS DETER DATA USING GRASS GIS 
+# PRE-PROCESS DETER DATA USING GRASS GIS 8.2.0.
 #------------------------------------------------------------------------------
 # NOTE: 
 # - Create the GPKG deter_grass.gpkg before calling this script.
