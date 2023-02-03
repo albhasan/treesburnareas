@@ -169,8 +169,8 @@
         \item What are the differences between DETER, DETER-B, and DETER 
             intenso?
         \begin{itemize}
-            \item They are the same. However, DETER textit{intenso} uses a ROI and 
-                higher spatial resolution data, but it's not public.
+            \item They are the same. However, DETER \textit{intenso} uses a ROI 
+                and higher spatial resolution data, but it's not public.
         \end{itemize}
         \item What are DETER's recommended papers?
         \begin{itemize}
@@ -190,8 +190,7 @@
         \end{itemize}
         \item Does DETER-R also identify burn scars? 
         \begin{itemize}
-            \item No, DETER-R doesn't detect or use that label. Check DETER-R 
-                paper.
+            \item No, DETER-R doesn't detect or use that label.
             %\item Marcos is going to check. As far as he understands, DETER-R 
                 %is automatic.
         \end{itemize}
@@ -470,6 +469,14 @@
     \end{figure}
 \end{frame}
 
+\begin{frame}
+    \frametitle{A spatio-temporal active-fire clustering approach for global
+    burned area mapping at 250 m from MODIS data}
+    \begin{itemize}
+        \item TODO.
+        \item FireCCI51.
+    \end{itemize}
+\end{frame}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -782,6 +789,16 @@
 \section{Partial results}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\begin{frame}
+    \frametitle{Subareas}
+    \begin{itemize}
+        \item DETER warnings are available for download as a shapefile.
+        \item Warnings are represented as polygons with a date.
+        \item Some of these polygons partially overlap across time.
+        \item The common area of overlapped polygons are called \emph{subarea}. 
+    \end{itemize}
+\end{frame}
+
 %%%%
 
 \begin{frame}
@@ -791,8 +808,7 @@
             DETER from 2017 to 2021.
         \item Since some of these areas partially overlap, their total is
             larger than the actual monitored area.
-        \item Burn scars are the predominant type of warnings in PA, MT, MA,
-            RR, and TO.
+        \item Burn scars are the predominant warnings in PA, MT, MA, RR, \& TO.
     \end{itemize}
 \end{frame}
 
@@ -820,7 +836,7 @@
 
 \begin{frame}
     \frametitle{DETER warnings by subarea}
-    \includegraphics[width=1.0\textwidth]{./img_results/plot_deter_area_by_warnings_state.png}
+    \includegraphics[width=1.0\textwidth]{./img_results/plot_deter_subarea_by_warnings_state.png}
 \end{frame}
 
 %%%%
@@ -864,8 +880,8 @@
             corresponding to each DETER subarea. The PRODES classes have the 
             suffix P. DETER's types don't have a suffix.
         \item The trajectories are chronologically ordered. The PRODES date
-            is approximated to August the first of the corresponding PRODES
-            year (PRODES' VIEWDATE isn't always the first date a class was 
+            is approximated to August 1st of the corresponding PRODES year 
+            (PRODES' VIEWDATE isn't always the first date a class was 
             observed).
         \item These figures only show the order of the transitions and not the
             time between them.
