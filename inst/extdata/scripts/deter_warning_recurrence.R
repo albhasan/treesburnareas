@@ -11,6 +11,20 @@
 #   using this line of code devtools::install_github("davidsjoberg/ggsankey")
 #
 # TODO:
+# - Do again the first DETER figure, use similar colors for deforestaion
+#   (desmatamento com solo exposto, desmatamento com vegetacao, e mineracao)
+#   and degradation classes. Also, use squares in all the data. Also, use only
+#   data from the Amazon biome instead of BLA.
+# - Create new trajectory figures using only DETER data.
+# - Create trajectory figures but only of those trajectories that become
+#   deforestation in PRODES.
+# - Cross data with MODIS Aqua' focos de calos. Ask Guilherme.
+# - Proposal:
+#   Desmatamento = solo exposto, desmatamento com vegetacao, e mineracao.
+#   Corte selectivo = ordenado e desordenado.
+#   Degradacao = degradacao.
+#   Cicatriz de queimada = cicatriz de queimada.
+#
 # - Update to GRASS geopackage. Use the data from ~/Documents/data/deter/amazonia_legal/deter_grass.gpkg
 # - Run Sankey by state.
 # - Download SHP fire calendar from ZENODO by Nathalia Carvalho.
@@ -271,7 +285,7 @@ subarea_prodes <-
     dplyr::mutate(row_id = as.integer(row_id),
                   prodes_code = as.integer(prodes_code),
                   prodes_name = dplyr::recode(prodes_code,
-                                              !!!prodes_classes, # )) %>%
+                                              !!!prodes_classes,
                                               .default = NA_character_,
                                               .missing = NA_character_))
 
