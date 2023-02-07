@@ -9,10 +9,10 @@ OUT_DIR="${HOME}/data/prodes/amazonia"
 
 # Download files.
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-wget -i "${SCRIPT_DIR}"/urls_prodes.txt -P "${OUT_DIR}" -t 5
+wget -nc -t 5 -i "${SCRIPT_DIR}"/urls_prodes.txt -P "${OUT_DIR}" 
 
 # Extract files.
-find "${OUT_DIR}" -type f -iname "*.zip" -exec unzip  {} -d "${OUT_DIR}" \;
+find "${OUT_DIR}" -type f -iname "*.zip" -exec unzip -o {} -d "${OUT_DIR}" \;
 
 # Remove zip files.
 find "${OUT_DIR}" -type f -iname "*.zip" -exec rm {} \;

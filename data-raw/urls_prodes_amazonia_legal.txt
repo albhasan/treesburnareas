@@ -6,5 +6,5 @@ http://terrabrasilis.dpi.inpe.br/download/dataset/legal-amz-prodes/vector/yearly
 http://terrabrasilis.dpi.inpe.br/download/dataset/legal-amz-prodes/vector/cloud.zip   
 http://terrabrasilis.dpi.inpe.br/download/dataset/legal-amz-prodes/vector/cloud_2022_pri.zip
 http://terrabrasilis.dpi.inpe.br/download/dataset/legal-amz-prodes/vector/no_forest.zip    
-http://terrabrasilis.dpi.inpe.br/download/dataset/legal-amz-prodes/vector/PDigital2000_2021_AMZ_raster_v20220915.zip
 http://terrabrasilis.dpi.inpe.br/download/dataset/legal-amz-prodes/vector/residual.zip
+http://terrabrasilis.dpi.inpe.br/download/dataset/legal-amz-prodes/raster/PDigital2000_2021_AMZ_raster_v20220915.zip
