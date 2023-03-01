@@ -2,7 +2,7 @@
 ###############################################################################
 # Proces PRODES data.
 #------------------------------------------------------------------------------
-# To ensure accuracy, we rasterize PRODES data on our own.
+# NOTE: To ensure accuracy, we rasterize PRODES data on our own.
 ###############################################################################
 
 library(dplyr)
