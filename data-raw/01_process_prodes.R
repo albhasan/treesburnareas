@@ -13,6 +13,12 @@ library(terra)
 
 #---- Set up ----
 
+out_dir <- "/home/alber/data/prodes/amazonia"
+stopifnot(dir.exists(out_dir))
+
+prodes_raster   <- file.path(out_dir, "prodes_raster.tif")
+prodes_viewdate <- file.path(out_dir, "prodes_viewdate.tif")
+
 clo_shp <- "/home/alber/data/prodes/amazonia/cloud_biome.shp"
 d07_shp <- paste0("/home/alber/data/prodes/amazonia/",
                   "accumulated_deforestation_2007_biome.shp")
@@ -28,11 +34,6 @@ stopifnot("PRODES files not found!" = file.exists(clo_shp, d07_shp, def_shp,
                                                   for_shp, hyd_shp, nof_shp,
                                                   res_shp, prodes_tif))
 
-out_dir <- "/home/alber/data/prodes/amazonia"
-stopifnot(dir.exists(out_dir))
-
-prodes_raster   <- file.path(out_dir, "prodes_raster.tif")
-prodes_viewdate <- file.path(out_dir, "prodes_viewdate.tif")
 
 # NOTE: These codes were obtained from the medata of
 #       PDigital2000_2021_AMZ_raster_v20220915_bioma.tif and adjusted to match
@@ -75,6 +76,7 @@ prodes_codes <- c(
 
 
 #---- Rasterize PRODES ----
+# NOTE: We had to rasterize PRODES because of spatial missmatches.
 
 # Read PRODES' shapefiles.
 clo_sf <- sf::read_sf(clo_shp)
