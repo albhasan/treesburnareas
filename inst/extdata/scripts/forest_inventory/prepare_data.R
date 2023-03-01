@@ -5,8 +5,22 @@ library(stringr)
 library(purrr)
 library(janitor)
 
+###############################################################################
+# PROCESS THE INVENTORY DATA
+#------------------------------------------------------------------------------
+# The data is composed of plots. Each plot has 2 files: a SHP and a CSV. The
+# SHP contains the perimeter (a square) while the CSV contais data about each
+# tree.
+#------------------------------------------------------------------------------
+# NOTE:
+# - The trees' coordinates are given using UTM without zone; the zone is
+#   available in each SHP.
+###############################################################################
+
 
 #---- Setup ----
+
+# TODO: Download data again and test without resplacing semi-colons
 
 # NOTE: Replace semi-colons with commas in these two files:
 # sed -i 's/;/,/g' FN_A01_2015_Inventory.csv
@@ -28,9 +42,20 @@ get_crs <- function(file_path) {
         return()
 }
 
+#' Check that coordinate columns exist and that the aren't NAs.
+#' @param x A tibble.
+#' @param lon A character. Name of the longitude column.
+#' @param lat A character. Name of the latitude column.
+#' @return    A tibble.
+drop_na_coords <- function(x, lon, lat) {
+    stopifnot("Columns not found!" = all(c(lon, lat) %in% colnames(x)))
+    x %>%
+        tidyr::drop_na(tidyselect::any_of(c(lon, lat))) %>%
+    return()
+}
 
 
-#---- Process the plot files ----
+#---- Process the plot files (SHPs) ----
 
 plot_files <-
     base_dir %>%
@@ -56,13 +81,8 @@ plot_files <-
 
 
 
-#---- Process the inventory files ----
+#---- Process the inventory files (CSVs) ----
 
-get_east_north <- function(x) {
-    x %>%
-        dplyr::select(tidyselect::contains(c("east", "north"))) %>%
-        janitor::clean_names()
-}
 
 inventory_files <-
     base_dir %>%
@@ -96,12 +116,6 @@ common_names  <-
     Reduce(intersect, .)
 
 
-drop_na_coords <- function(x, lon, lat) {
-    stopifnot("Columns not found!" = all(c(lon, lat) %in% colnames(x)))
-    x %>%
-        tidyr::drop_na(tidyselect::all_of(c(lon, lat))) %>%
-    return()
-}
 
 inventory_files <-
     inventory_files %>%
@@ -109,21 +123,53 @@ inventory_files <-
                                       lon = "utm_easting",
                                       lat = "utm_northing"))
 
+# process_cords <- function(x) {
+#     ifelse(!is.na(as.numeric(x)), x, gsub("\\.", "", y))
+# }
+
 cast_to_sf <- function(x, my_crs) {
     stopifnot(inherits(my_crs, what = "crs"))
-    sf::st_as_sf(x,
-                 coords = c("utm_easting", "utm_northing"),
-                 crs = my_crs)
+    x %>%
+        # NOTE: Deal with files with weird coordinates.
+        dplyr::mutate(
+            utm_e = dplyr::if_else(is.na(as.numeric(utm_easting)),
+                                   gsub("\\.", "", utm_easting),
+                                   NA_character_),
+            utm_e = dplyr::if_else(!is.na(utm_e),
+                                   gsub('^([0-9]{6})([0-9]+)$', '\\1\\.\\2',
+                                        utm_e),
+                                   utm_e)
+            utm_easting = dplyr::if_else(is.na(utm_e), utm_easting, utm_e)
+            utm_n = dplyr::if_else(is.na(as.numeric(utm_northing)),
+                                   gsub("\\.", "", utm_northing),
+                                   NA_character_),
+            utm_n = dplyr::if_else(!is.na(utm_n),
+                                   gsub('^([0-9]{7})([0-9]+)$', '\\1\\.\\2',
+                                        utm_n),
+                                   utm_e)
+            utm_northing = dplyr::if_else(is.na(utm_n), utm_northing, utm_n)
+        ) %>%
+        dplyr::select(-utm_e, -utm_n) %>%
+        sf::st_as_sf(coords = c("utm_easting", "utm_northing"),
+                     crs = my_crs) %>%
+        return()
 }
 
+#safe_cast <- safely(cast_to_sf)
 
-inventory_files %>%
+
+
+res <-
+    inventory_files %>%
     # slice(4) %>%
     # pull(plot_crs) %>% class()
-    dplyr::mutate(csv_sf = purrr::map2(csv_sf,
+    dplyr::mutate(csv_sf2 = purrr::map2(csv_sf,
                                        plot_crs,
-                                      cast_to_sf))
+                                      #safe_cast))
+                                       cast_to_sf))
 
+y <- res[["csv_sf2"]] %>% purrr::transpose()
+wrong <- res[!is_ok, ]
 
 
 
@@ -133,4 +179,9 @@ inventory_files %>%
 # - project them to WGS84
 
 
-
+# TODO: remove
+get_east_north <- function(x) {
+    x %>%
+        dplyr::select(tidyselect::contains(c("east", "north"))) %>%
+        janitor::clean_names()
+}
