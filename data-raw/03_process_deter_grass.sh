@@ -10,7 +10,7 @@
 #   biome:    Biome's name. NOTE: It isn't needed.
 ###############################################################################
 
-echo "ERROR: can't spatially query prodes' mask using deter. Try qgis"
+echo "ERROR: can't spatially query prodes' mask using deter. Use QGIS models instead."
 exit 1
 
 #---- Setup ----
@@ -18,16 +18,17 @@ exit 1
 # Path to the DETER file downloaded from TERRABRASILIS
 DETER_SHP="/home/alber/Documents/data/deter/amazonia_legal/deter_public.shp"
 
+# Path to PRODES' vector mask.
+PRODES_GPKG="/home/alber/Documents/data/prodes/prodes_mask.gpkg"
+PRODES_MASK="prodes_mask"
+
 # Path to GRASS GIS database.
 GRASS_DATA="/home/alber/Documents/grassdata"
-
-# Path to PRODES' vector mask.
-PRODES_GPKG="/home/alber/data/prodes/prodes_mask.gpkg"
-PRODES_MASK="prodes_mask"
 
 # Path to results.
 OUT_GPKG="/home/alber/Documents/data/deter/amazonia_legal/deter_grass.gpkg"
 OUT_LAYER=deter_public
+
 
 
 #---- Utilitary functions ----
