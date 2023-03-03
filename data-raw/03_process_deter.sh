@@ -10,6 +10,8 @@
 #   biome:    Biome's name. NOTE: It isn't needed.
 ###############################################################################
 
+echo "ERROR: can't spatially query prodes' mask using deter. Try qgis"
+exit 1
 
 #---- Setup ----
 
@@ -22,6 +24,10 @@ GRASS_DATA="/home/alber/Documents/grassdata"
 # Path to PRODES' vector mask.
 PRODES_GPKG="/home/alber/data/prodes/prodes_mask.gpkg"
 PRODES_MASK="prodes_mask"
+
+# Path to results.
+OUT_GPKG="/home/alber/Documents/data/deter/amazonia_legal/deter_grass.gpkg"
+OUT_LAYER=deter_public
 
 
 #---- Utilitary functions ----
@@ -66,42 +72,46 @@ grass -e -c ${DETER_SHP} ${GRASS_DATA}/deter
 
 # Import DETER data to GRASS GIS. GRASS cleans and intersects the polygons.
 # NOTE: The snap argument was taken from GRASS suggestion during the first 
-#       import. See below.
+#       import. See the bottom of this file.
 grass ${GRASS_DATA}/deter/PERMANENT --exec v.import input=${DETER_SHP} output=deter_public snap=1e-06
 
 # Import PRODES mask.
 grass ${GRASS_DATA}/deter/PERMANENT --exec v.import input=${PRODES_GPKG} layer=${PRODES_MASK} output=prodes_mask
 
 
+
 #---- Compute additonal fields ----
 
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.extract -d input=deter_public type=area output=deter_area
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.centroids input=deter_area output=deter_cent
+
 # Add subarea_id: Enumerate each polygon. 
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.addcolumn deter_public columns="subarea_id int"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update deter_public col=subarea_id qcol=cat
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.addcolumn map=deter_cent columns="subarea_id int"
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update map=deter_cent col=subarea_id qcol=cat
 
 # Add xy_id. xy_id is created by combining into a string the centroids' 
 # coordinates up to 6 decimal places.
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.to.db map=deter_public type=centroid option=coor columns="x,y"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update deter_public col=x qcol="round(x, 6)"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update deter_public col=y qcol="round(y, 6)"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.addcolumn deter_public columns="xy_id varchar"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update deter_public col=xy_id qcol="x || ';' || y"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.dropcolumn deter_public column=x
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.dropcolumn deter_public column=y
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.to.db map=deter_cent type=centroid option=coor columns="x,y"
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update map=deter_cent col=x qcol="round(x, 6)"
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update map=deter_cent col=y qcol="round(y, 6)"
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.addcolumn map=deter_cent columns="xy_id varchar"
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update map=deter_cent col=xy_id qcol="x || ';' || y"
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.dropcolumn map=deter_cent columns=x,y
 
 # Add area column
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.to.db map=deter_public option=area type=boundary columns=subarea_ha units=hectares
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.to.db map=deter_cent option=area type=boundary columns=subarea_ha units=hectares
 
 # Identify DETER polygons whose centroids fall in the Amazon Biome.
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.extract input=deter_public type=centroid output=deter_cent
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.type input=deter_cent from_type=centroid output=deter_point to_type=point
-grass ${GRASS_DATA}/deter/PERMANENT --exec g.remove -f type=vector name=deter_cent
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.extract -d input=deter_cent type=centroid output=deter_cent2
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.type input=deter_cent2 from_type=centroid to_type=point output=deter_point 
+grass ${GRASS_DATA}/deter/PERMANENT --exec g.remove -f type=vector name=deter_cent2
+# TODO: remove duplicated points
 grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.addcolumn map=deter_point column="biome_amazon INT"
 grass ${GRASS_DATA}/deter/PERMANENT --exec v.distance from=deter_point to=prodes_mask to_column=DN upload=to_attr column=biome_amazon dmax=0
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.join map=deter_public column=xy_id other_table=deter_point other_column=xy_id subset_columns=xy_id,biome_amazon
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.join map=deter_public column=cat other_table=deter_point other_column=xy_id subset_columns=xy_id,biome_amazon
 
 # Export the results.
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.out.ogr -a input=deter_public type=area format=GPKG output=~/Documents/data/deter/amazonia_legal/deter_grass.gpkg output_layer=deter_public
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.out.ogr -a input=deter_public type=area format=GPKG output=${OUT_GPKG} output_layer=${OUT_LAYER}
 
 exit 0
 
