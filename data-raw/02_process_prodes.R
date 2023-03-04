@@ -38,6 +38,7 @@ stopifnot("PRODES files not found!" = file.exists(clo_shp, d07_shp, def_shp,
 # NOTE: These codes were obtained from the medata of
 #       PDigital2000_2021_AMZ_raster_v20220915_bioma.tif and adjusted to match
 #       the class names used in the PRODES shapefiles.
+print("WARNING: Make sure the PRODES codes are updated!")
 prodes_codes <- c(
     "r2014"           =  54L,
     "r2012"           =  52L,
