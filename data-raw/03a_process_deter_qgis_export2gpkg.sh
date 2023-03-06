@@ -3,6 +3,11 @@
 # EXPORT DETER SHAPEFILE TO GEOPACKAGE
 ###############################################################################
 
+echo "ERROR: using ogr2ogr produces problem for further processing DETER data. Export SHP to Geopackage using QGIS."
+exit 1
+
+# Warning 1: A geometry of type MULTIPOLYGON is inserted into layer deter_public of geometry type POLYGON, which is not normally allowed by the GeoPackage specification, but the driver will however do it. To create a conformant GeoPackage, if using ogr2ogr, the -nlt option can be used to override the layer geometry type. This warning will no longer be emitted for this combination of layer and feature geometry type.
+
 # Path to the DETER file downloaded from TERRABRASILIS
 DETER_SHP="/home/alber/Documents/data/deter/amazonia_legal/deter_public.shp"
 OUT_GPKG="/home/alber/Documents/data/deter/amazonia_legal/deter_ogr2ogr.gpkg"
