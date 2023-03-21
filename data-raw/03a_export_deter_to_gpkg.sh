@@ -1,34 +1,20 @@
 #!/bin/bash
 ###############################################################################
-# PRE-PROCESS DETER DATA USING GRASS GIS 8.2.0.
-#------------------------------------------------------------------------------
-# NOTE: 
-#------------------------------------------------------------------------------
-# TODO: 
-# - add missing columns: 
-#   deter_id: Enumeration of the original DETER polygons. NOTE: not needed.
-#   biome:    Biome's name. NOTE: It isn't needed.
+# EXPORT DETER SHP TO GEOPACKAGE AND FIX THEIR POLYGONS USING GRASS GIS.
 ###############################################################################
 
-echo "ERROR: can't spatially query prodes' mask using deter. Use QGIS models instead."
-exit 1
 
 #---- Setup ----
 
 # Path to the DETER file downloaded from TERRABRASILIS
 DETER_SHP="/home/alber/Documents/data/deter/amazonia_legal/deter_public.shp"
 
-# Path to PRODES' vector mask.
-PRODES_GPKG="/home/alber/Documents/data/prodes/prodes_mask.gpkg"
-PRODES_MASK="prodes_mask"
-
 # Path to GRASS GIS database.
 GRASS_DATA="/home/alber/Documents/grassdata"
 
 # Path to results.
-OUT_GPKG="/home/alber/Documents/data/deter/amazonia_legal/deter_grass.gpkg"
+OUT_GPKG="/home/alber/Documents/data/deter/amazonia_legal/deter_public.gpkg"
 OUT_LAYER=deter_public
-
 
 
 #---- Utilitary functions ----
@@ -62,8 +48,7 @@ if command -v grass &> /dev/null; then
 fi
 
 is_file_valid $DETER_SHP
-is_file_valid $PRODES_GPKG
-is_dir_valid $GRASS_DATA
+is_dir_valid  $GRASS_DATA
 
 
 #---- Import data to GRASS GIS ----
@@ -76,42 +61,9 @@ grass -e -c ${DETER_SHP} ${GRASS_DATA}/deter
 #       import. See the bottom of this file.
 grass ${GRASS_DATA}/deter/PERMANENT --exec v.import input=${DETER_SHP} output=deter_public snap=1e-06
 
-# Import PRODES mask.
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.import input=${PRODES_GPKG} layer=${PRODES_MASK} output=prodes_mask
 
+#---- Export the results ----
 
-
-#---- Compute additonal fields ----
-
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.extract -d input=deter_public type=area output=deter_area
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.centroids input=deter_area output=deter_cent
-
-# Add subarea_id: Enumerate each polygon. 
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.addcolumn map=deter_cent columns="subarea_id int"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update map=deter_cent col=subarea_id qcol=cat
-
-# Add xy_id. xy_id is created by combining into a string the centroids' 
-# coordinates up to 6 decimal places.
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.to.db map=deter_cent type=centroid option=coor columns="x,y"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update map=deter_cent col=x qcol="round(x, 6)"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update map=deter_cent col=y qcol="round(y, 6)"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.addcolumn map=deter_cent columns="xy_id varchar"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.update map=deter_cent col=xy_id qcol="x || ';' || y"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.dropcolumn map=deter_cent columns=x,y
-
-# Add area column
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.to.db map=deter_cent option=area type=boundary columns=subarea_ha units=hectares
-
-# Identify DETER polygons whose centroids fall in the Amazon Biome.
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.extract -d input=deter_cent type=centroid output=deter_cent2
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.type input=deter_cent2 from_type=centroid to_type=point output=deter_point 
-grass ${GRASS_DATA}/deter/PERMANENT --exec g.remove -f type=vector name=deter_cent2
-# TODO: remove duplicated points
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.addcolumn map=deter_point column="biome_amazon INT"
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.distance from=deter_point to=prodes_mask to_column=DN upload=to_attr column=biome_amazon dmax=0
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.db.join map=deter_public column=cat other_table=deter_point other_column=xy_id subset_columns=xy_id,biome_amazon
-
-# Export the results.
 grass ${GRASS_DATA}/deter/PERMANENT --exec v.out.ogr -a input=deter_public type=area format=GPKG output=${OUT_GPKG} output_layer=${OUT_LAYER}
 
 exit 0
