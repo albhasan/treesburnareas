@@ -1,14 +1,4 @@
 
-#' Compute the mode of a vector.
-#'
-#' @param x A vector.
-#' @return  A vector.
-the_mode <- function(x) {
-    x <- x[!is.na(x)]
-    ux <- unique(x)
-    ux[which.max(tabulate(match(x, ux)))]
-}
-
 
 
 get_plot_area_by_state_year_type <- function(subarea_dt) {
