@@ -4,10 +4,13 @@
 \alias{get_plot_days_first_to_last}
 \title{Build boxplots of the days from first to last DETER warning.}
 \usage{
-get_plot_days_first_to_last(subarea_dt)
+get_plot_days_first_to_last(subarea_dt, area_breaks)
 }
 \arguments{
 \item{subarea_dt}{A data.table object hosted in this package.}
+
+\item{area_breaks}{A named numeric vector with the breaks of subareas by
+size.}
 }
 \value{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{       A ggplot2 object.
