@@ -4,7 +4,12 @@
 #'   of subareas of DETER's deforestation alerts and PRODES's deforestation
 #'   areas. DETER subareas are segments of DETER alerts which have continuity
 #'   over time, that is, their shape do not change over time. Capitalized names
-#'   are the DETER attributes corresponding to the warnings.
+#'   are the DETER attributes corresponding to the warnings. The code required
+#'   to download the data required and create these dataset are available in
+#'   the directory data-raw. When PRODES is updated (currently PRODES 2021
+#'   v20220915 is used), , also updated its classes codes (see file
+#'   PDigital2000_2021_AMZ_raster_v20220915_bioma.txt) in the script
+#'   04_process_deter.R at the definition fo the variable prodes_classes.
 #' @name subarea_dt
 #' @docType data
 #' @keywords datasets
