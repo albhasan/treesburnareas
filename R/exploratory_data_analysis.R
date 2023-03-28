@@ -1,46 +1,9 @@
 ###############################################################################
 # Analysis of the recurrence of DETER warnings.
 #------------------------------------------------------------------------------
-# NOTE:
-# - input data is a geopackage with DETER warnings after running
-#   fix_geometries, multi to single part, union, and multi to single part
-#    (again) operations.
-# - ggsankey isn't availabe at CRAN. Install it from github
-#   using this line of code devtools::install_github("davidsjoberg/ggsankey")
-# - if PRODES is updated, also updated its classes codes (see file
-#   PDigital2000_2021_AMZ_raster_v20220915_bioma.txt) in the prodes_classes
-#   variable.
-#
-# TODO:
-# - Create new trajectory figures using only DETER data.
-# - Create trajectory figures but only of those trajectories that become
-#   deforestation in PRODES.
-# - Cross data with MODIS Aqua' focos de calor. Ask Guilherme.
-# - Proposal:
-#   Desmatamento = solo exposto, desmatamento com vegetacao, e mineracao.
-#   Corte selectivo = ordenado e desordenado.
-#   Degradacao = degradacao.
-#   Cicatriz de queimada = cicatriz de queimada.
-#
-# - Update to GRASS geopackage. Use the data from ~/Documents/data/deter/amazonia_legal/deter_grass.gpkg
-# - Run Sankey by state.
-# - Download SHP fire calendar from ZENODO by Nathalia Carvalho.
-# - Download  GWIS (ask Guilherme).
-# - Compute table with areas by trajectory
-# - Create map and add to slides.
-# - Convert trajectories back to shapefile.
-# - Select some weird trajectories and add them to the slides.
-#
-# DONE:
-# - Time to PRODES
-# - Add Amazonia Legal to maps. NOTE: PRODES mask added.
-# - Do again the first DETER figure, use similar colors for deforestaion
-#   (desmatamento com solo exposto, desmatamento com vegetacao, e mineracao)
-#   and degradation classes. Also, use squares in all the data. Also, use only
-#   data from the Amazon biome instead of BLA. NOTE: treemap doesn't support
-#   squares.
 
 create_plots <- function(out_dir, save_figs = TRUE) {
+
     # out_dir <- "~/Documents/trees_lab/deter_warning_recurrence/img"
     # save_figs = TRUE
 
@@ -64,7 +27,9 @@ create_plots <- function(out_dir, save_figs = TRUE) {
         "> 1000 ha" = Inf
     )
 
-    # Treemap: DETER warning area by state, year, warning type and area.
+
+    #---- Treemap: DETER warning area by state, year, warning type and area----
+
     plot_area_by_state_year_type <-
         get_plot_area_by_state_year_type(treesburnareas::subarea_dt)
     if (save_figs) {
@@ -82,7 +47,9 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                                    "(PRODES), and type"))
     }
 
-    # Point density: DETER subareas by state, year, warning type and area.
+
+    #---- Point density: DETER subareas by state, year, warning type and area
+
     # NOTE: This plot shows uses the CLASSNAME of the first DETER warning.
     plot_density_area_ndays <-
         get_plot_density_area_ndays(treesburnareas::subarea_dt)
@@ -102,7 +69,9 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                       "and number of days between warnings"))
     }
 
-    # Histogram DETER subareas by number of warnings.
+
+    #---- Histogram DETER subareas by number of warnings ----
+
     plot_area_by_warnings <-
         get_plot_area_by_warnings(treesburnareas::subarea_dt, area_breaks)
     if (save_figs) {
@@ -120,7 +89,9 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                                    "warnings in the Brazilian Amazon"))
     }
 
-    # Histogram DETER subareas by number of warnings by state
+
+    #---- Histogram DETER subareas by number of warnings by state ----
+
     plot_area_by_warnings_state <-
         get_plot_area_by_warnings_state(treesburnareas::subarea_dt,
                                         area_breaks)
@@ -140,9 +111,9 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                       "number of warnings and state"))
     }
 
-    # Boxplot days between warnings by subarea
+    #---- Boxplot days between warnings by subarea ----
     plot_days_first_to_last <-
-        get_plot_days_first_to_last(treesburnareas::subarea_dt)
+        get_plot_days_first_to_last(treesburnareas::subarea_dt, area_breaks)
     if (save_figs) {
         ggplot2::ggsave(
             plot =  plot_days_first_to_last,
@@ -158,7 +129,8 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                                    "Amazon by Brazilian state"))
     }
 
-    # Sankey: Trajectories of subareas
+    #---- Sankey: Trajectories of subareas ----
+
     plot_tb <-
         treesburnareas::subarea_dt %>%
         dplyr::filter(subarea_ha > 3 | is.na(subarea_ha),
@@ -190,7 +162,7 @@ create_plots <- function(out_dir, save_figs = TRUE) {
         #dplyr::filter(diff_days > 0 | is.na(diff_days)) %>%
         data.table::as.data.table()
 
-    # TODO: Make sankey use the variable subarea_ha
+    # NOTE: I couldn't make sankey use the variable subarea_ha.
     for (i in sort(unique(plot_tb$n_warn_p))) {
         if (i == 1)
             next
