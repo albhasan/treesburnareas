@@ -24,3 +24,5 @@
 ^\.github$
 ^codecov\.yml$
 ^data-raw$
+^LICENSE\.md$
+
