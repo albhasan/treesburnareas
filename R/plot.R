@@ -227,10 +227,12 @@ get_plot_area_by_warnings_state <- function(subarea_dt, area_breaks) {
 #' number of days between the first and last DETER deforestation warning
 #' associated to each subarea.
 #' @param subarea_dt  A data.table object hosted in this package.
+#' @param area_breaks A named numeric vector with the breaks of subareas by
+#' size.
 #' @return            A ggplot2 object.
 #' @export
-get_plot_days_first_to_last <- function(subarea_dt){
-    area_breaks <- area_type <- CLASSNAME <- data_source <- NULL
+get_plot_days_first_to_last <- function(subarea_dt, area_breaks){
+    area_type <- CLASSNAME <- data_source <- NULL
     days_first_last <- diff_days <- in_prodes <- last_VIEW_DATE <- NULL
     n_warnings <- subarea_ha <- UF <- VIEW_DATE <- xy_id <- NULL
 
