@@ -44,20 +44,6 @@ stopifnot("PRODES file with classes not found!" =
 
 rm(prodes_classes_file)
 
-# Categorize the warnings' area.
-area_breaks <- c(
-    "0"        = 0,
-    "6,25 ha"  = 6.25,
-    "10 ha"    = 10,
-    "25 ha"    = 25,
-    "50 ha"    = 50,
-    "100 ha"   = 100,
-    "250 ha"   = 250,
-    "500 ha"   = 500,
-    "1000 ha"   = 1000,
-    "> 1000 ha" = Inf
-)
-
 deter_classes <- c(
     "CICATRIZ_DE_QUEIMADA" = "Burn scar",
     "CORTE_SELETIVO"       = "Selective cut",
@@ -230,9 +216,9 @@ if (reuse_temporal_files && file.exists(subarea_prodes_date_file)) {
 stopifnot("Some PRODES VIEWDATE data is missing" =
           nrow(subarea_prodes_date) == nrow(subarea_unique_sf))
 
-sf::write_sf(subarea_unique_sf,
-             dsn = file.path(out_dir, "deter_warning_recurrence.gpkg"),
-             layer = "subarea_unique_sf")
+# sf::write_sf(subarea_unique_sf,
+#              dsn = file.path(out_dir, "deter_warning_recurrence.gpkg"),
+#              layer = "subarea_unique_sf")
 
 rm(subarea_unique_sf)
 rm(subarea_prodes_file)

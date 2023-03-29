@@ -1,0 +1,28 @@
+# TODO:
+# - Create new trajectory figures using only DETER data.
+# - Create trajectory figures but only of those trajectories that become
+#   deforestation in PRODES.
+# - Cross data with MODIS Aqua' focos de calor. Ask Guilherme.
+# - Proposal:
+#   Desmatamento = solo exposto, desmatamento com vegetacao, e mineracao.
+#   Corte selectivo = ordenado e desordenado.
+#   Degradacao = degradacao.
+#   Cicatriz de queimada = cicatriz de queimada.
+#
+# - Update to GRASS geopackage. Use the data from ~/Documents/data/deter/amazonia_legal/deter_grass.gpkg
+# - Run Sankey by state.
+# - Download SHP fire calendar from ZENODO by Nathalia Carvalho.
+# - Download  GWIS (ask Guilherme).
+# - Compute table with areas by trajectory
+# - Create map and add to slides.
+# - Convert trajectories back to shapefile.
+# - Select some weird trajectories and add them to the slides.
+#
+# DONE:
+# - Time to PRODES
+# - Add Amazonia Legal to maps. NOTE: PRODES mask added.
+# - Do again the first DETER figure, use similar colors for deforestaion
+#   (desmatamento com solo exposto, desmatamento com vegetacao, e mineracao)
+#   and degradation classes. Also, use squares in all the data. Also, use only
+#   data from the Amazon biome instead of BLA. NOTE: treemap doesn't support
+#   squares.
