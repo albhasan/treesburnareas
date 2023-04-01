@@ -16,8 +16,8 @@ library(units)
 
 #---- Configuration ----
 
-out_dir <-  "~/Documents/github/treesburnareas/inst/extdata/slides/sbsr2023/latex/figures"
-sbsr_gpk <- "~/Documents/github/treesburnareas/inst/extdata/slides/sbsr2023/data/sbsr2023.gpkg"
+out_dir <-  "~/Documents/github/treesburnareas/inst/extdata/sbsr2023/slides/latex/figures"
+sbsr_gpk <- "~/Documents/github/treesburnareas/inst/extdata/sbsr2023/slides/data/sbsr2023.gpkg"
 deter_lyr <- "deter_public_sfx_epsg-32722"
 deter_union_lyr <- "deter_public_sfx_epsg-32722_fix_union_fix_rm-dup-vertices_right-hand_fix"
 
@@ -38,12 +38,10 @@ area_breaks <- c(
     "> 1000 ha" = Inf
 )
 
-save_figures <- FALSE
-
 
 #---- Utilitary functions ----
 
-source("~/Documents/github/treesburnareas/inst/extdata/docs/sbsr2023/R/util.R")
+source("~/Documents/github/treesburnareas/inst/extdata/sbsr2023/doc/R/util.R")
 
 
 #---- Load data ----
@@ -130,16 +128,26 @@ plot_area_by_warnings <-
                                   labels = names(area_breaks)[-1])) %>%
     dplyr::group_by(n_warnings, area_type) %>%
     dplyr::summarize(area_ha = sum(area_ha)) %>%
+    dplyr::mutate(prop = prop.table(area_ha),
+                  prop = dplyr::if_else(n_warnings > 2, NA, prop)) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(dplyr::desc(area_type)) %>%
     ggplot2::ggplot() +
     ggplot2::geom_bar(ggplot2::aes(x = n_warnings,
                                    y = area_ha,
                                    fill = area_type),
                       stat = "identity") +
+    ggplot2::geom_text(ggplot2::aes(x = n_warnings,
+                                    y = area_ha,
+                                    label = scales::label_percent(0.1)(prop)),
+                       position = ggplot2::position_stack(vjust = 0.5),
+                       check_overlap = TRUE,
+                       size = 3.0) +
     ggplot2::xlab("Number of wanings.") +
     ggplot2::ylab("Area (ha)") +
     ggplot2::labs(fill = "Area less than") +
     ggplot2::scale_y_continuous(labels = scales::comma) +
-    ggplot2::scale_colour_viridis_d()
+    ggplot2::scale_fill_viridis_d()
 
 if (interactive()) {
     plot_area_by_warnings +
@@ -231,8 +239,11 @@ if (interactive()) {
 rm(plot_days_between_warnings)
 
 
-
 #---- Plot days from first to last warning by area ----
+
+format_warnings <- function(x) {
+    paste(x, "warnings")
+}
 
 plot_days_first_to_last <-
     plot_tb %>%
@@ -246,7 +257,8 @@ plot_days_first_to_last <-
     dplyr::arrange(area_type, days_first_last) %>%
     ggplot2::ggplot() +
     ggplot2::geom_boxplot(ggplot2::aes(x = area_type, y = days_first_last)) +
-    ggplot2::facet_wrap(~n_warnings) +
+    ggplot2::facet_wrap(~n_warnings,
+                        labeller = labeller(n_warnings = format_warnings)) +
     ggplot2::xlab("Number of DETER warnings") +
     ggplot2::ylab("Days from first to last DETER warning") +
     ggplot2::scale_y_continuous(labels = scales::comma) +
@@ -274,7 +286,6 @@ if (interactive()) {
 rm(plot_days_first_to_last)
 
 
-
 #---- Plot DETER's area by type, and size ----
 
 plot_deter_warnings_area_size <-
@@ -284,18 +295,28 @@ plot_deter_warnings_area_size <-
                                   breaks = area_breaks,
                                   labels = names(area_breaks)[-1]),
                   year = ordered(year)) %>%
-    dplyr::group_by(CLASSNAME, UF, area_type, year) %>%
+    dplyr::group_by(area_type, year) %>%
     dplyr::summarize(area_ha = sum(area_ha)) %>%
     dplyr::ungroup() %>%
+    dplyr::group_by(year) %>%
+    dplyr::mutate(prop = prop.table(area_ha)) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(dplyr::desc(area_type)) %>%
     ggplot2::ggplot() +
     ggplot2::geom_col(ggplot2::aes(x = year,
                                    y = area_ha,
                                    fill = area_type)) +
+    ggplot2::geom_text(ggplot2::aes(x = year,
+                                    y = area_ha,
+                                    label = scales::label_percent(0.1)(prop)),
+                       position = ggplot2::position_stack(vjust = 0.5),
+                       check_overlap = TRUE,
+                       size = 3.0) +
     ggplot2::xlab("Year (PRODES)") +
     ggplot2::ylab("Area (ha)") +
     ggplot2::labs(fill = "Area less than") +
     ggplot2::scale_y_continuous(labels = scales::comma) +
-    ggplot2::scale_colour_viridis_d()
+    ggplot2::scale_fill_viridis_d()
 
 if (interactive()) {
     plot_deter_warnings_area_size +
@@ -322,18 +343,28 @@ plot_deter_warnings_size <-
     dplyr::mutate(area_type = cut(area_ha,
                                   breaks = area_breaks,
                                   labels = names(area_breaks)[-1])) %>%
-    dplyr::group_by(CLASSNAME, UF, area_type, year) %>%
+    dplyr::group_by(area_type, year) %>%
     dplyr::summarize(events = dplyr::n()) %>%
     dplyr::ungroup() %>%
+    dplyr::group_by(year) %>%
+    dplyr::mutate(prop = prop.table(events)) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(dplyr::desc(area_type)) %>%
     ggplot2::ggplot() +
     ggplot2::geom_col(ggplot2::aes(x = year,
                                    y = events,
                                    fill = area_type)) +
+    ggplot2::geom_text(ggplot2::aes(x = year,
+                                    y = events,
+                                    label = scales::label_percent(0.1)(prop)),
+                       position = ggplot2::position_stack(vjust = 0.5),
+                       check_overlap = TRUE,
+                       size = 3.0) +
     ggplot2::xlab("Year (PRODES)") +
     ggplot2::ylab("Number of DETER warnings") +
     ggplot2::labs(fill = "Area less than") +
     ggplot2::scale_y_continuous(labels = scales::comma) +
-    ggplot2::scale_colour_viridis_d()
+    ggplot2::scale_fill_viridis_d()
 
 if (interactive()) {
     plot_deter_warnings_size +
@@ -351,7 +382,6 @@ if (interactive()) {
 rm(plot_deter_warnings_size)
 
 
-
 #---- Plot DETER's warnings by state, type, size, and month of the year ----
 
 plot_deter_warnings_size_month <-
@@ -361,19 +391,31 @@ plot_deter_warnings_size_month <-
                                                   format = "%d/%m/%Y"), "%m")),
                   moy = ordered(moy, labels = month.abb),
                   year = ordered(year)) %>%
-    dplyr::group_by(CLASSNAME, UF, year, moy) %>%
+    dplyr::group_by(year, moy) %>%
     dplyr::summarize(area_ha = sum(area_ha)) %>%
     dplyr::ungroup() %>%
+    dplyr::group_by(moy) %>%
+    dplyr::mutate(prop = prop.table(area_ha)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(prop = dplyr::if_else(!(moy %in% c("Aug", "Sep", "Oct")),
+                                        NA,
+                                        prop)) %>%
+    dplyr::arrange(dplyr::desc(year)) %>%
     ggplot2::ggplot() +
     ggplot2::geom_col(ggplot2::aes(x = moy,
                                    y = area_ha,
                                    fill = year)) +
+    ggplot2::geom_text(ggplot2::aes(x = moy,
+                                    y = area_ha,
+                                    label = scales::label_percent(0.1)(prop)),
+                       position = ggplot2::position_stack(vjust = 0.5),
+                       check_overlap = TRUE,
+                       size = 3.0) +
     ggplot2::xlab("Month") +
     ggplot2::ylab("Area (ha)") +
     ggplot2::labs(fill = "Year") +
-    ggplot2::scale_y_continuous(labels = scales::comma) #+
-    #ggplot2::scale_colour_viridis_d()
-
+    ggplot2::scale_y_continuous(labels = scales::comma) +
+    ggplot2::scale_fill_viridis_d()
 
 if (interactive()) {
     plot_deter_warnings_size_month +
