@@ -1,10 +1,9 @@
 ###############################################################################
 # Analysis data for submission to the Simposio Brasileiro de Sensoramento
-# Remoto 2023
+# Remoto 2023 (slides)
 #
 # Analize DETER's warnings in São Felix do Xingu.
 ###############################################################################
-stop("DEPRECATED. Use deter_warning_recurrence instead.R")
 
 
 library(dplyr)
@@ -15,16 +14,13 @@ library(stringr)
 library(units)
 
 
-
 #---- Configuration ----
 
-base_dir <- "~/Documents/sbsr2023"
-out_dir <- file.path(base_dir, "img")
-sbsr_gpk <- file.path(base_dir, "data", "sbsr2023.gpkg")
+out_dir <-  "~/Documents/github/treesburnareas/inst/extdata/slides/sbsr2023/latex/figures"
+sbsr_gpk <- "~/Documents/github/treesburnareas/inst/extdata/slides/sbsr2023/data/sbsr2023.gpkg"
 deter_lyr <- "deter_public_sfx_epsg-32722"
 deter_union_lyr <- "deter_public_sfx_epsg-32722_fix_union_fix_rm-dup-vertices_right-hand_fix"
 
-stopifnot("Base directory not found!" = dir.exists(base_dir))
 stopifnot("Out directory not found!" = dir.exists(out_dir))
 stopifnot("GeoPackage not found!" = file.exists(sbsr_gpk))
 
@@ -45,11 +41,9 @@ area_breaks <- c(
 save_figures <- FALSE
 
 
-
 #---- Utilitary functions ----
 
-source(file.path(base_dir, "R", "util.R"))
-
+source("~/Documents/github/treesburnareas/inst/extdata/docs/sbsr2023/R/util.R")
 
 
 #---- Load data ----
@@ -77,7 +71,6 @@ union_sf <-
                   area_ha > 3)
 
 stopifnot("IDs missmatch" = all(unique(union_sf$id) %in% unique(deter_sf$id)))
-
 
 
 #---- Preprocess data ----
@@ -123,11 +116,9 @@ warnings_by_subarea %>%
     ensurer::ensure_that(nrow(dplyr::filter(., area_ha == 0)) == 0,
                          err_desc = "No area should have 0 area!")
 
-
 # NOTE: Shouldn't they have the same area?
 sum(deter_sf$area_ha) # TODO: remove overlapped areas from here!
 sum(warnings_by_subarea$area_ha)
-
 
 
 #---- Plot area by number of warnings ----
@@ -153,7 +144,7 @@ plot_area_by_warnings <-
 if (interactive()) {
     plot_area_by_warnings +
         ggplot2::ggtitle("Deter area by number of warnings.")
-}else{
+} else {
     ggplot2::ggsave(
         plot = plot_area_by_warnings,
         filename = file.path(out_dir, "plot_area_by_warnings.png"),
@@ -164,8 +155,6 @@ if (interactive()) {
 }
 
 rm(plot_area_by_warnings)
-
-
 
 # Number of subareas by number of warnings.
 union_sf %>%
@@ -182,7 +171,6 @@ union_sf %>%
     readr::write_csv(file.path(out_dir, "warning_subareas_by_number_area.tex"))
 
 
-
 #---- Plot time between warnings ----
 
 union_sf <-
@@ -190,7 +178,6 @@ union_sf <-
     dplyr::left_join(dplyr::select(warnings_by_subarea, xycent_id, n_warnings),
                      by = "xycent_id")
 
-# NOTE: This takes a while!
 plot_tb <-
     union_sf %>%
     sf::st_drop_geometry() %>%
@@ -199,7 +186,6 @@ plot_tb <-
     dplyr::mutate(last_VIEW_DATE = dplyr::lag(VIEW_DATE),
                   diff_days = as.vector(difftime(VIEW_DATE, last_VIEW_DATE,
                                                  units = "days")))
-
 
 
 #---- Plot days between warnings by area ----
@@ -327,7 +313,6 @@ if (interactive()) {
 rm(plot_deter_warnings_area_size)
 
 
-
 #---- Plot DETER's warnings by type, and size ----
 
 plot_deter_warnings_size <-
@@ -386,8 +371,8 @@ plot_deter_warnings_size_month <-
     ggplot2::xlab("Month") +
     ggplot2::ylab("Area (ha)") +
     ggplot2::labs(fill = "Year") +
-    ggplot2::scale_y_continuous(labels = scales::comma) +
-    ggplot2::scale_colour_viridis_d()
+    ggplot2::scale_y_continuous(labels = scales::comma) #+
+    #ggplot2::scale_colour_viridis_d()
 
 
 if (interactive()) {
