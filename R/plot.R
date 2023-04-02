@@ -14,8 +14,6 @@ get_plot_area_by_state_year_type <- function(subarea_dt) {
     subarea_km2 <- NULL
 
     subarea_dt %>%
-        dplyr::filter(data_source == "DETER",
-                      in_prodes == TRUE) %>%
         dplyr::group_by(UF, CLASSNAME, year) %>%
         dplyr::summarize(subarea_ha = sum(subarea_ha)) %>%
         dplyr::ungroup() %>%
@@ -81,8 +79,6 @@ get_plot_density_area_ndays <- function(subarea_dt) {
     xy_id <- year <- NULL
 
     subarea_dt %>%
-        dplyr::filter(data_source == "DETER",
-                      in_prodes == TRUE) %>%
         dplyr::group_by(xy_id) %>%
         dplyr::arrange(VIEW_DATE, .by_group = TRUE) %>%
         dplyr::mutate(last_CLASSNAME = dplyr::lag(CLASSNAME),
@@ -142,8 +138,6 @@ get_plot_area_by_warnings <- function(subarea_dt, area_breaks) {
     subarea_type <- UF <- xy_id <- NULL
 
     subarea_dt %>%
-        dplyr::filter(data_source == "DETER",
-                      in_prodes == TRUE) %>%
         dplyr::group_by(xy_id) %>%
         dplyr::summarize(n_warnings = dplyr::n(),
                          subarea_ha = dplyr::first(subarea_ha),
@@ -188,8 +182,6 @@ get_plot_area_by_warnings_state <- function(subarea_dt, area_breaks) {
     UF <- xy_id <- NULL
 
     subarea_dt %>%
-        dplyr::filter(data_source == "DETER",
-                      in_prodes == TRUE) %>%
         dplyr::group_by(xy_id) %>%
         dplyr::summarize(n_warnings = dplyr::n(),
                          subarea_ha = dplyr::first(subarea_ha),
@@ -237,8 +229,6 @@ get_plot_days_first_to_last <- function(subarea_dt, area_breaks){
     n_warnings <- subarea_ha <- UF <- VIEW_DATE <- xy_id <- NULL
 
     subarea_dt %>%
-        dplyr::filter(data_source == "DETER",
-                      in_prodes == TRUE) %>%
         dplyr::group_by(xy_id) %>%
         dplyr::arrange(VIEW_DATE, .by_group = TRUE) %>%
         dplyr::mutate(last_CLASSNAME = dplyr::lag(CLASSNAME),

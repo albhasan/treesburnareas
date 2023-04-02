@@ -1,6 +1,6 @@
 ###############################################################################
 # Analysis data for submission to the Simposio Brasileiro de Sensoramento
-# Remoto 2023 (slides)
+# Remoto 2023
 #
 # Analize DETER's warnings in São Felix do Xingu.
 ###############################################################################

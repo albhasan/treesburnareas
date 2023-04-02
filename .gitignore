@@ -41,3 +41,10 @@ vignettes/*.pdf
 # Other
 tags
 *.swp
+*.aux
+*.log
+*.nav
+*.snm
+*.bbl
+*.blg
+

@@ -9,7 +9,6 @@
 #   Degradacao = degradacao.
 #   Cicatriz de queimada = cicatriz de queimada.
 #
-# - Update to GRASS geopackage. Use the data from ~/Documents/data/deter/amazonia_legal/deter_grass.gpkg
 # - Run Sankey by state.
 # - Download SHP fire calendar from ZENODO by Nathalia Carvalho.
 # - Download  GWIS (ask Guilherme).
@@ -26,3 +25,5 @@
 #   and degradation classes. Also, use squares in all the data. Also, use only
 #   data from the Amazon biome instead of BLA. NOTE: treemap doesn't support
 #   squares.
+# - Update to GRASS geopackage. Use the data from 
+#   ~/Documents/data/deter/amazonia_legal/deter_grass.gpkg

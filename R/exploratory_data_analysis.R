@@ -4,8 +4,8 @@
 
 create_plots <- function(out_dir, save_figs = TRUE) {
 
-    # out_dir <- "~/Documents/trees_lab/deter_warning_recurrence/img"
-    # save_figs = TRUE
+    # create_plots(out_dir = "~/Documents/trees_lab/deter_warning_recurrence/img",
+    #              save_figs = TRUE)
 
     CLASSNAME <- data_source <- diff_days <- in_prodes <- NULL
     last_CLASSNAME <- last_VIEW_DATE_est <- n_warn_p <- subarea_ha <- NULL
@@ -31,7 +31,10 @@ create_plots <- function(out_dir, save_figs = TRUE) {
     #---- Treemap: DETER warning area by state, year, warning type and area----
 
     plot_area_by_state_year_type <-
-        get_plot_area_by_state_year_type(treesburnareas::subarea_dt)
+        treesburnareas::subarea_dt %>%
+        dplyr::filter(data_source == "DETER",
+                      in_prodes == TRUE) %>%
+        get_plot_area_by_state_year_type()
     if (save_figs) {
         ggplot2::ggsave(
             plot = plot_area_by_state_year_type,
@@ -52,7 +55,10 @@ create_plots <- function(out_dir, save_figs = TRUE) {
 
     # NOTE: This plot shows uses the CLASSNAME of the first DETER warning.
     plot_density_area_ndays <-
-        get_plot_density_area_ndays(treesburnareas::subarea_dt)
+        treesburnareas::subarea_dt %>%
+        dplyr::filter(data_source == "DETER",
+                      in_prodes == TRUE) %>%
+        get_plot_density_area_ndays()
     if (save_figs) {
         ggplot2::ggsave(
             plot = plot_density_area_ndays,
@@ -73,7 +79,10 @@ create_plots <- function(out_dir, save_figs = TRUE) {
     #---- Histogram DETER subareas by number of warnings ----
 
     plot_area_by_warnings <-
-        get_plot_area_by_warnings(treesburnareas::subarea_dt, area_breaks)
+        treesburnareas::subarea_dt %>%
+        dplyr::filter(data_source == "DETER",
+                      in_prodes == TRUE) %>%
+        get_plot_area_by_warnings(area_breaks)
     if (save_figs) {
         ggplot2::ggsave(
             plot = plot_area_by_warnings,
@@ -93,8 +102,10 @@ create_plots <- function(out_dir, save_figs = TRUE) {
     #---- Histogram DETER subareas by number of warnings by state ----
 
     plot_area_by_warnings_state <-
-        get_plot_area_by_warnings_state(treesburnareas::subarea_dt,
-                                        area_breaks)
+        treesburnareas::subarea_dt %>%
+        dplyr::filter(data_source == "DETER",
+                      in_prodes == TRUE) %>%
+        get_plot_area_by_warnings_state(area_breaks)
     if (save_figs) {
         ggplot2::ggsave(
             plot = plot_area_by_warnings_state,
@@ -113,7 +124,10 @@ create_plots <- function(out_dir, save_figs = TRUE) {
 
     #---- Boxplot days between warnings by subarea ----
     plot_days_first_to_last <-
-        get_plot_days_first_to_last(treesburnareas::subarea_dt, area_breaks)
+        treesburnareas::subarea_dt %>%
+        dplyr::filter(data_source == "DETER",
+                      in_prodes == TRUE) %>%
+        get_plot_days_first_to_last(area_breaks)
     if (save_figs) {
         ggplot2::ggsave(
             plot =  plot_days_first_to_last,
@@ -129,26 +143,17 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                                    "Amazon by Brazilian state"))
     }
 
-    #---- Sankey: Trajectories of subareas ----
+    #---- Sankey: Trajectories of subareas (only DETER) ----
 
     plot_tb <-
         treesburnareas::subarea_dt %>%
-        dplyr::filter(subarea_ha > 3 | is.na(subarea_ha),
-                      !is.na(CLASSNAME),
-                      in_prodes == TRUE) %>%
+        dplyr::filter(data_source == "DETER",
+                      in_prodes == TRUE,
+                      subarea_ha > 3 | is.na(subarea_ha),
+                      !is.na(CLASSNAME)) %>%
         dplyr::arrange(xy_id, VIEW_DATE_est) %>%
         dplyr::group_by(xy_id) %>%
-        dplyr::mutate(CLASSNAME = dplyr::if_else(
-                          stringr::str_starts(CLASSNAME, "d"),
-                          "P_deforestation",
-                          CLASSNAME
-                      ),
-                      CLASSNAME = dplyr::if_else(
-                          stringr::str_starts(CLASSNAME, "r"),
-                          "P_residue",
-                          CLASSNAME
-                      ),
-                      last_CLASSNAME = dplyr::lag(CLASSNAME),
+        dplyr::mutate(last_CLASSNAME = dplyr::lag(CLASSNAME),
                       last_VIEW_DATE_est = dplyr::lag(VIEW_DATE_est),
                       diff_days = as.vector(difftime(VIEW_DATE_est,
                                                      last_VIEW_DATE_est,
@@ -162,13 +167,11 @@ create_plots <- function(out_dir, save_figs = TRUE) {
         #dplyr::filter(diff_days > 0 | is.na(diff_days)) %>%
         data.table::as.data.table()
 
-    # NOTE: I couldn't make sankey use the variable subarea_ha.
+    # NOTE: I couldn't make ggsankey::geom_sankey use the variable subarea_ha.
     for (i in sort(unique(plot_tb$n_warn_p))) {
         if (i == 1)
             next
-
         my_plot <- get_plot_sankey(data_tb = plot_tb, n_warnings = i)
-
         if (save_figs) {
             ggplot2::ggsave(
                 plot = my_plot,
@@ -189,5 +192,12 @@ create_plots <- function(out_dir, save_figs = TRUE) {
 
     rm(my_plot)
     rm(plot_tb)
+
+
+
+# TODO:
+    #---- Sankey: Trajectories of subareas (DETER & PRODES) ----
+
+
 
 }
