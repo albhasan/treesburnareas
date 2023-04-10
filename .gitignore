@@ -47,4 +47,7 @@ tags
 *.snm
 *.bbl
 *.blg
-
+*.toc
+*.vrb
+*.out
+*.gz
