@@ -13,8 +13,9 @@ DETER_SHP="/home/alber/Documents/data/deter/amazonia_legal/deter_public.shp"
 GRASS_DATA="/home/alber/Documents/grassdata"
 
 # Path to results.
-OUT_GPKG="/home/alber/Documents/data/deter/amazonia_legal/deter_public.gpkg"
-OUT_LAYER=deter_public
+OUT_DETER="/home/alber/Documents/data/deter/amazonia_legal/deter_public.gpkg"
+OUT_SUBAREAS="/home/alber/Documents/data/deter/amazonia_legal/deter_subareas.gpkg"
+SUBAREAS_LAYER=deter_subareas
 
 
 #---- Utilitary functions ----
@@ -40,6 +41,13 @@ is_dir_valid () {
 
 #---- Validation ----
 
+if command -v ogr2ogr &> /dev/null; then
+        echo "INFO: ogr2ogr found!"
+    else
+        echo "ERROR: ogr2ogr could not be found. Please install it."
+        exit 1
+fi
+
 if command -v grass &> /dev/null; then
         echo "INFO: grass gis found!"
     else
@@ -49,6 +57,11 @@ fi
 
 is_file_valid $DETER_SHP
 is_dir_valid  $GRASS_DATA
+
+
+#---- Import data to GeoPackage (only for qgis visualization) ----
+
+ogr2ogr ${OUT_DETER} ${DETER_SHP}
 
 
 #---- Import data to GRASS GIS ----
@@ -64,7 +77,7 @@ grass ${GRASS_DATA}/deter/PERMANENT --exec v.import input=${DETER_SHP} output=de
 
 #---- Export the results ----
 
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.out.ogr -a input=deter_public type=area format=GPKG output=${OUT_GPKG} output_layer=${OUT_LAYER}
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.out.ogr -a input=deter_public type=area format=GPKG output=${OUT_SUBAREAS} output_layer=${SUBAREAS_LAYER}
 
 exit 0
 
