@@ -194,6 +194,8 @@ get_plot_area_by_warnings_state <- function(subarea_dt, area_breaks) {
         dplyr::group_by(UF, n_warnings, area_type) %>%
         dplyr::summarize(subarea_ha = sum(subarea_ha)) %>%
         dplyr::ungroup() %>%
+        dplyr::mutate(prop = prop.table(subarea_ha),
+                      prop = dplyr::if_else(n_warnings > 2, NA, prop)) %>%
         tibble::as_tibble() %>%
         ggplot2::ggplot() +
         ggplot2::geom_bar(ggplot2::aes(x = n_warnings,

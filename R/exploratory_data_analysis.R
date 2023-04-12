@@ -4,8 +4,8 @@
 
 create_plots <- function(out_dir, save_figs = TRUE) {
 
-    # create_plots(out_dir = "~/Documents/trees_lab/deter_warning_recurrence/img",
-    #              save_figs = TRUE)
+# create_plots(out_dir = "~/Documents/github/treesburnareas/inst/extdata/slides/exploratory_data_analysis/figures"
+#              save_figs = TRUE)
 
     CLASSNAME <- data_source <- diff_days <- in_prodes <- NULL
     last_CLASSNAME <- last_VIEW_DATE_est <- n_warn_p <- subarea_ha <- NULL
@@ -13,6 +13,9 @@ create_plots <- function(out_dir, save_figs = TRUE) {
 
     if (save_figs)
         stopifnot("Directory not found!" = dir.exists(out_dir))
+
+
+    #---- Setup ----
 
     area_breaks <- c(
         "0"        = 0,
@@ -153,18 +156,10 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                       !is.na(CLASSNAME)) %>%
         dplyr::arrange(xy_id, VIEW_DATE_est) %>%
         dplyr::group_by(xy_id) %>%
-        dplyr::mutate(last_CLASSNAME = dplyr::lag(CLASSNAME),
-                      last_VIEW_DATE_est = dplyr::lag(VIEW_DATE_est),
-                      diff_days = as.vector(difftime(VIEW_DATE_est,
-                                                     last_VIEW_DATE_est,
-                                                     units = "days")),
-                      n_warn_p = dplyr::n()) %>%
+        dplyr::mutate(n_warn_p = dplyr::n()) %>%
         tidyr::fill(subarea_ha, .direction = "downup") %>%
         dplyr::ungroup() %>%
-        dplyr::select(subarea_ha, diff_days,
-                      CLASSNAME, last_CLASSNAME,
-                      xy_id, n_warn_p, data_source)  %>%
-        #dplyr::filter(diff_days > 0 | is.na(diff_days)) %>%
+        dplyr::select(subarea_ha, CLASSNAME, xy_id, n_warn_p, data_source) %>%
         data.table::as.data.table()
 
     # NOTE: I couldn't make ggsankey::geom_sankey use the variable subarea_ha.
@@ -189,15 +184,75 @@ create_plots <- function(out_dir, save_figs = TRUE) {
         }
     }
 
-
     rm(my_plot)
     rm(plot_tb)
 
 
-
-# TODO:
     #---- Sankey: Trajectories of subareas (DETER & PRODES) ----
 
+    # NOTE: Use only DETER subareas which have a PRODES match.
+    subareas_prodes <-
+        treesburnareas::subarea_dt %>%
+        dplyr::filter(data_source == "PRODES") %>%
+        dplyr::select(xy_id) %>%
+        dplyr::distinct(xy_id) %>%
+        dplyr::arrange(xy_id)
 
+    # Print PRODES classes.
+    # treesburnareas::subarea_dt %>%
+    #     dplyr::filter(data_source == "PRODES") %>%
+    #     dplyr::select(CLASSNAME) %>%
+    #     dplyr::distinct(CLASSNAME) %>%
+    #     dplyr::arrange(CLASSNAME) %>%
+    #     tibble::as_tibble() %>%
+    #     print(n = Inf)
+
+    plot_tb <-
+        treesburnareas::subarea_dt %>%
+        dplyr::filter(subarea_ha > 3 | is.na(subarea_ha),
+                      !is.na(CLASSNAME)) %>%
+        dplyr::arrange(xy_id, VIEW_DATE_est) %>%
+        dplyr::group_by(xy_id) %>%
+        tidyr::fill(subarea_ha, .direction = "downup") %>%
+        dplyr::ungroup() %>%
+        dplyr::select(subarea_ha, CLASSNAME, xy_id, data_source) %>%
+        dplyr::left_join(y = subareas_prodes, by = "xy_id") %>%
+        dplyr::group_by(xy_id) %>%
+        dplyr::mutate(n_warn_p = dplyr::n()) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(CLASSNAME = dplyr::case_match(CLASSNAME,
+            c("d2007 (mask)", "d2008", "d2009", "d2010", "d2011", "d2012",
+              "d2013", "d2014", "d2015", "d2016", "d2017", "d2018", "d2019",
+              "d2020", "d2021") ~ "P_deforestation",
+            c( "r2010", "r2011", "r2012", "r2013", "r2014", "r2015", "r2016",
+              "r2017", "r2018", "r2019", "r2020", "r2021") ~ "P_residual",
+            .default = CLASSNAME)) %>%
+        data.table::as.data.table()
+
+    # NOTE: I couldn't make ggsankey::geom_sankey use the variable subarea_ha.
+    for (i in sort(unique(plot_tb$n_warn_p))) {
+        if (i == 1)
+            next
+        my_plot <- get_plot_sankey(data_tb = plot_tb, n_warnings = i)
+        if (save_figs) {
+            ggplot2::ggsave(
+                plot = my_plot,
+                filename = file.path(
+                    out_dir,
+                    paste0("plot_deter_prodes_subarea_trajectory_", i, ".png")
+                ),
+                height = 210,
+                width = 297,
+                units = "mm"
+            )
+        } else {
+             my_plot +
+                ggplot2::ggtitle("Trajectory of subareas")
+        }
+    }
+
+    rm(my_plot)
+    rm(plot_tb)
+    rm(subareas_prodes)
 
 }
