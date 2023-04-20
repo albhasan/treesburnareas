@@ -4,12 +4,12 @@
 
 create_plots <- function(out_dir, save_figs = TRUE) {
 
-# create_plots(out_dir = "~/Documents/github/treesburnareas/inst/extdata/slides/exploratory_data_analysis/figures"
-#              save_figs = TRUE)
+    # create_plots(out_dir = "~/Documents/github/treesburnareas/inst/extdata/slides/exploratory_data_analysis/figures",
+    #              save_figs = TRUE)
 
     CLASSNAME <- data_source <- diff_days <- in_prodes <- NULL
-    last_CLASSNAME <- last_VIEW_DATE_est <- n_warn_p <- subarea_ha <- NULL
-    VIEW_DATE_est <- xy_id <- NULL
+    last_CLASSNAME <- n_warn_p <- subarea_ha <- NULL
+    VIEW_DATE <- xy_id <- NULL
 
     if (save_figs)
         stopifnot("Directory not found!" = dir.exists(out_dir))
@@ -30,13 +30,20 @@ create_plots <- function(out_dir, save_figs = TRUE) {
         "> 1000 ha" = Inf
     )
 
+    # Exclude subareas smaller than this threshold:
+    min_subarea_ha <- 3
+
+    # Only include subareas ocurring before this date:
+    max_date <- as.Date("2021-08-01")
+
 
     #---- Treemap: DETER warning area by state, year, warning type and area----
 
     plot_area_by_state_year_type <-
         treesburnareas::subarea_dt %>%
         dplyr::filter(data_source == "DETER",
-                      in_prodes == TRUE) %>%
+                      in_prodes == TRUE,
+                      VIEW_DATE < max_date) %>%
         get_plot_area_by_state_year_type()
     if (save_figs) {
         ggplot2::ggsave(
@@ -60,7 +67,8 @@ create_plots <- function(out_dir, save_figs = TRUE) {
     plot_density_area_ndays <-
         treesburnareas::subarea_dt %>%
         dplyr::filter(data_source == "DETER",
-                      in_prodes == TRUE) %>%
+                      in_prodes == TRUE,
+                      VIEW_DATE < max_date) %>%
         get_plot_density_area_ndays()
     if (save_figs) {
         ggplot2::ggsave(
@@ -84,7 +92,8 @@ create_plots <- function(out_dir, save_figs = TRUE) {
     plot_area_by_warnings <-
         treesburnareas::subarea_dt %>%
         dplyr::filter(data_source == "DETER",
-                      in_prodes == TRUE) %>%
+                      in_prodes == TRUE,
+                      VIEW_DATE < max_date) %>%
         get_plot_area_by_warnings(area_breaks)
     if (save_figs) {
         ggplot2::ggsave(
@@ -107,7 +116,8 @@ create_plots <- function(out_dir, save_figs = TRUE) {
     plot_area_by_warnings_state <-
         treesburnareas::subarea_dt %>%
         dplyr::filter(data_source == "DETER",
-                      in_prodes == TRUE) %>%
+                      in_prodes == TRUE,
+                      VIEW_DATE < max_date) %>%
         get_plot_area_by_warnings_state(area_breaks)
     if (save_figs) {
         ggplot2::ggsave(
@@ -125,11 +135,14 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                       "number of warnings and state"))
     }
 
+
     #---- Boxplot days between warnings by subarea ----
+
     plot_days_first_to_last <-
         treesburnareas::subarea_dt %>%
         dplyr::filter(data_source == "DETER",
-                      in_prodes == TRUE) %>%
+                      in_prodes == TRUE,
+                      VIEW_DATE < max_date) %>%
         get_plot_days_first_to_last(area_breaks)
     if (save_figs) {
         ggplot2::ggsave(
@@ -152,9 +165,10 @@ create_plots <- function(out_dir, save_figs = TRUE) {
         treesburnareas::subarea_dt %>%
         dplyr::filter(data_source == "DETER",
                       in_prodes == TRUE,
-                      subarea_ha > 3 | is.na(subarea_ha),
-                      !is.na(CLASSNAME)) %>%
-        dplyr::arrange(xy_id, VIEW_DATE_est) %>%
+                      subarea_ha > min_subarea_ha | is.na(subarea_ha),
+                      !is.na(CLASSNAME),
+                      VIEW_DATE < max_date) %>%
+        dplyr::arrange(xy_id, VIEW_DATE) %>%
         dplyr::group_by(xy_id) %>%
         dplyr::mutate(n_warn_p = dplyr::n()) %>%
         tidyr::fill(subarea_ha, .direction = "downup") %>%
@@ -193,25 +207,18 @@ create_plots <- function(out_dir, save_figs = TRUE) {
     # NOTE: Use only DETER subareas which have a PRODES match.
     subareas_prodes <-
         treesburnareas::subarea_dt %>%
-        dplyr::filter(data_source == "PRODES") %>%
+        dplyr::filter(data_source == "PRODES",
+                      VIEW_DATE < max_date) %>%
         dplyr::select(xy_id) %>%
         dplyr::distinct(xy_id) %>%
         dplyr::arrange(xy_id)
 
-    # Print PRODES classes.
-    # treesburnareas::subarea_dt %>%
-    #     dplyr::filter(data_source == "PRODES") %>%
-    #     dplyr::select(CLASSNAME) %>%
-    #     dplyr::distinct(CLASSNAME) %>%
-    #     dplyr::arrange(CLASSNAME) %>%
-    #     tibble::as_tibble() %>%
-    #     print(n = Inf)
-
     plot_tb <-
         treesburnareas::subarea_dt %>%
-        dplyr::filter(subarea_ha > 3 | is.na(subarea_ha),
-                      !is.na(CLASSNAME)) %>%
-        dplyr::arrange(xy_id, VIEW_DATE_est) %>%
+        dplyr::filter(subarea_ha > min_subarea_ha  | is.na(subarea_ha),
+                      !is.na(CLASSNAME),
+                      VIEW_DATE < max_date) %>%
+        dplyr::arrange(xy_id, VIEW_DATE) %>%
         dplyr::group_by(xy_id) %>%
         tidyr::fill(subarea_ha, .direction = "downup") %>%
         dplyr::ungroup() %>%
@@ -221,11 +228,15 @@ create_plots <- function(out_dir, save_figs = TRUE) {
         dplyr::mutate(n_warn_p = dplyr::n()) %>%
         dplyr::ungroup() %>%
         dplyr::mutate(CLASSNAME = dplyr::case_match(CLASSNAME,
-            c("d2007 (mask)", "d2008", "d2009", "d2010", "d2011", "d2012",
+            c("d2007", "d2008", "d2009", "d2010", "d2011", "d2012",
               "d2013", "d2014", "d2015", "d2016", "d2017", "d2018", "d2019",
               "d2020", "d2021") ~ "P_deforestation",
             c( "r2010", "r2011", "r2012", "r2013", "r2014", "r2015", "r2016",
               "r2017", "r2018", "r2019", "r2020", "r2021") ~ "P_residual",
+            "FOREST_2021" ~ "P_forest_2021",
+            "HIDROGRAFIA" ~ "P_hidrografia",
+            c("NAO_FLORESTA", "NAO_FLORESTA2") ~  "P_nao_floresta",
+            "NUVEM_2021" ~ "P_nuvem_2021",
             .default = CLASSNAME)) %>%
         data.table::as.data.table()
 
@@ -254,5 +265,45 @@ create_plots <- function(out_dir, save_figs = TRUE) {
     rm(my_plot)
     rm(plot_tb)
     rm(subareas_prodes)
-
 }
+
+
+suspicious_trajectories <- function(out_dir) {
+    CLASSNAME <- data_source <- traj_position <- VIEW_DATE <- xy_id <- NULL
+    year <- NULL
+
+    start_prodes_def_file <- file.path(out_dir, "traj_starts_prodes_def.shp")
+    end_prodes_for_file   <- file.path(out_dir, "traj_ends_prodes_for.shp")
+
+    subarea_flat_sf <-
+        treesburnareas::subarea_sf %>%
+        treesburnareas::get_flat_subarea()
+
+   # Trajectory starts with PRODES deforestation.
+   treesburnareas::subarea_dt %>%
+        dplyr::group_by(xy_id) %>%
+        dplyr::arrange(VIEW_DATE) %>%
+        dplyr::first() %>%
+        dplyr::ungroup() %>%
+        dplyr::filter(data_source == "PRODES",
+                      stringr::str_starts(CLASSNAME, pattern = "d")) %>%
+        dplyr::select(CLASSNAME, VIEW_DATE, xy_id, traj_position, year) %>%
+        merge(subarea_flat_sf, .,
+              by = "xy_id") %>%
+        sf::write_sf(start_prodes_def_file)
+
+    # Trajectory ends with PRODES forest.
+   treesburnareas::subarea_dt %>%
+        dplyr::group_by(xy_id) %>%
+        dplyr::arrange(dplyr::desc(VIEW_DATE)) %>%
+        dplyr::first() %>%
+        dplyr::ungroup() %>%
+        dplyr::filter(data_source == "PRODES",
+                      stringr::str_starts(CLASSNAME,
+                                          pattern = "FOREST_2021")) %>%
+        dplyr::select(CLASSNAME, VIEW_DATE, xy_id, traj_position, year) %>%
+        merge(subarea_flat_sf, .,
+              by = "xy_id") %>%
+        sf::write_sf(end_prodes_for_file)
+}
+

@@ -1,13 +1,16 @@
+#!/usr/bin/env Rscript
 ###############################################################################
-# PROCESS DETER DATA TO PRODUCE THE TIBBLE REQUIRED FOR THE FIGURES.
+# PROCESS DETER TO PRODUCE THE DATA REQUIRED BY THE EDA'S FIGURES.
 ###############################################################################
 
 library(data.table)
 library(dplyr)
+library(ensurer)
 library(forcats)
 library(ggplot2)
 library(ggsankey)
 library(magrittr)
+library(readr)
 library(stringr)
 library(terra)
 library(tibble)
@@ -15,99 +18,71 @@ library(treemapify)
 library(tidyr)
 library(units)
 
+library(treesburnareas)
+
 
 #---- Configuration ----
 
 reuse_temporal_files <- FALSE
 
-out_dir <- "~/Documents/trees_lab/deter_warning_recurrence/img"
+# Inputs
+prodes_year     <- "2021"
+prodes_raster   <- "~/Documents/data/prodes/amazonia/prodes_raster.tif"
+prodes_viewdate <- "~/Documents/data/prodes/amazonia/prodes_viewdate.tif"
+deter_gpkg      <- "~/Documents/data/deter/amazonia_legal/deter_qgis.gpkg"
+deter_lyr       <- "deter_qgis"
 
-data_dir <- "~/Documents/data"
-deter_lyr <- "deter_qgis"
-deter_gpkg <- file.path(data_dir, "deter",  "amazonia_legal",
-                        "deter_qgis.gpkg")
-prodes_raster <- file.path(data_dir, "prodes", "amazonia", "prodes_raster.tif")
-prodes_viewdate <- file.path(data_dir, "prodes", "amazonia",
-                             "prodes_viewdate.tif")
-prodes_classes_file  <-
-    file.path(data_dir, "prodes", "amazonia",
-              "PDigital2000_2021_AMZ_raster_v20220915_bioma.txt")
+# Outputs
+tmp_dir <- "~/Documents/trees_lab/deter_warning_recurrence/img"
 
-stopifnot("Out directory not found!" = dir.exists(out_dir))
-stopifnot("GeoPackage not found!" = file.exists(deter_gpkg))
+# Validation
+stopifnot("GeoPackage with DETER data not found! Use DETER scripts" =
+          file.exists(deter_gpkg))
 stopifnot("PRODES raster not found! Use script process_prodes.R" =
           file.exists(prodes_raster))
 stopifnot("PRODES view dates raster not found! Use script procss_prodes.R" =
           file.exists(prodes_viewdate))
-stopifnot("PRODES file with classes not found!" =
-          file.exists(prodes_classes_file))
+stopifnot("Temporal directory not found!" = dir.exists(tmp_dir))
 
-rm(prodes_classes_file)
-
-deter_classes <- c(
-    "CICATRIZ_DE_QUEIMADA" = "Burn scar",
-    "CORTE_SELETIVO"       = "Selective cut",
-    "CS_DESORDENADO"       = "Untidy slash",
-    "CS_GEOMETRICO"        = "Geometric slash",
-    "DEGRADACAO"           = "Degradation",
-    "DESMATAMENTO_CR"      = "Clear cut",
-    "DESMATAMENTO_VEG"     = "Slash with veg.",
-    "MINERACAO"            = "Mining"
-)
-
-# NOTE: Obtained from the text file
-#       PDigital2000_2021_AMZ_raster_v20220915_bioma.txt
-prodes_classes <- c("54" =  "r2014",
-                    "52" =  "r2012",
-                    "61" =  "r2021",
-                    "53" =  "r2013",
-                    "58" =  "r2018",
-                    "57" =  "r2017",
-                    "51" =  "r2011",
-                    "60" =  "r2020",
-                    "56" =  "r2016",
-                    "50" =  "r2010",
-                    "59" =  "r2019",
-                    "55" =  "r2015",
-                    "12" =  "d2012",
-                    "14" =  "d2014",
-                    "13" =  "d2013",
-                    "11" =  "d2011",
-                    "10" =  "d2010",
-                     "9" =  "d2009",
-                    "15" =  "d2015",
-                    "17" =  "d2017",
-                    "18" =  "d2018",
-                    "16" =  "d2016",
-                    "20" =  "d2020",
-                    "19" =  "d2019",
-                    "21" =  "d2021",
-                     "8" =  "d2008",
-                    "91" =  "P_Water",        # Hidrografia
-                    "32" =  "P_Clouds",       # Nuvem
-                   "101" =  "P_Non-forest",   # NaoFloresta
-                     "7" =  "d2007 (mask)", # d2007 (mascara)
-                   "100" =  "P_Forest")       # Floresta
+# Get PRODES codes.
+prodes_codes <-
+    treesburnareas::get_prodes_codes() %>%
+    tidyr::pivot_longer(cols = -tidyselect::any_of("prodes_code"),
+                        names_to = c("X1", "source", "year"),
+                        names_sep = "_",
+                        values_to = "prodes_class") %>%
+    dplyr::filter(source == "shp",
+                  year == prodes_year) %>%
+    dplyr::select(prodes_code, prodes_class) %>%
+    ensurer::ensure_that(
+        nrow(.) > 0,
+        err_desc = "No PRODES codes found for the given year and source") %>%
+    (function(x) {
+         x %>%
+            dplyr::pull(prodes_class) %>%
+            magrittr::set_names(as.character(x[["prodes_code"]])) %>%
+            return()
+    })
 
 
 #---- Load data ----
-
-# NOTE:
-# - subarea is what we call each of the subareas of each DETER warning which
-#   overlaps with some other subarea of other warnings.
-# - subarea_id identifies features afer applying GIS' union operation and
-#   pre-processing.
 
 # Keep the geometry separated form the data handle it as a data.table.
 subarea_sf <-
     deter_gpkg %>%
     sf::read_sf(layer = deter_lyr) %>%
+    dplyr::mutate(VIEW_DATE = lubridate::as_date(VIEW_DATE),
+                  year = compute_prodes_year(VIEW_DATE)) %>%
     dplyr::filter(!is.na(xy_id),
                   !is.na(subarea_ha),
                   subarea_ha > 0,
-                  in_prodes == 1) %>%
+                  in_prodes == 1,
+                  year <= as.integer(prodes_year)) %>%
     sf::st_cast(to = "POLYGON",
-                do_split = TRUE)
+                do_split = TRUE) %>%
+    dplyr::select(-x, -y) %>%
+    dplyr::distinct(xy_id, VIEW_DATE, .keep_all = TRUE) %>%
+    dplyr::arrange(xy_id, VIEW_DATE)
 
 subarea_dt <-
     subarea_sf %>%
@@ -116,72 +91,37 @@ subarea_dt <-
 
 subarea_sf <-
     subarea_sf %>%
-    dplyr::select(subarea_id)
+    dplyr::select(subarea_id, xy_id)
 
+stopifnot("Subarea missmatch!" = nrow(subarea_sf) == nrow(subarea_dt))
 stopifnot("Some subareas are missing subarea_id" =
           length(unique(subarea_sf$subarea_id)) == nrow(subarea_sf))
+stopifnot("The subareas only have one trajectory step. Nothing more to do!" =
+          length(unique(subarea_sf$subarea_id)) >
+          length(unique(subarea_sf$xy_id)))
 
 rm(deter_lyr)
 rm(deter_gpkg)
 
-# Recode DETER classes.
-# Compute PRODES year.
-# Filter out DETER warnigs before 2022.
-# Sort by subarea and date.
-subarea_dt <-
-    subarea_dt %>%
-    dplyr::mutate(
-        CLASSNAME = dplyr::recode(CLASSNAME, !!!deter_classes,
-                                  .default = NA_character_,
-                                  .missing = NA_character_),
-        CLASSNAME = forcats::fct_relevel(CLASSNAME, sort),
-        VIEW_DATE = lubridate::as_date(VIEW_DATE),
-        start_date = lubridate::as_date(paste(year(VIEW_DATE), "08", "01",
-                                              sep = "-")),
-        year = dplyr::if_else(VIEW_DATE > start_date,
-                              as.double(year(start_date)) + 1,
-                              as.double(year(start_date))),
-        year = as.integer(year)) %>%
-    dplyr::select(-start_date, -x, -y) %>%
-    dplyr::filter(year < 2022) %>%
-    dplyr::distinct(xy_id, VIEW_DATE, .keep_all = TRUE) %>%
-    dplyr::arrange(xy_id, VIEW_DATE)
 
+#---- Prepare data ----
 
-#---- Prepare plot data ----
+subarea_flat_sf <-
+    subarea_sf %>%
+    treesburnareas::get_flat_subarea()
 
-# Get unique DETER subareas ids (ids of poligons without overlap).
-subarea_unique_tb <-
-    subarea_dt %>%
-    dplyr::select(xy_id, subarea_id) %>%
-    dplyr::group_by(xy_id) %>%
-    dplyr::summarize(n_warnings_deter = dplyr::n(),
-                     subarea_id = dplyr::first(subarea_id)) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(row_id = dplyr::row_number()) %>%
-    tibble::as_tibble()
-
-subarea_unique_sf  <- merge(subarea_sf,
-                            subarea_unique_tb,
-                            by = "subarea_id",
-                            all.y = TRUE)
-
-stopifnot("NAs in the number of deter warnings found" =
-          sum(is.na(subarea_unique_sf$n_warnings_deter)) == 0)
-stopifnot("Expected more subareas than unique subareas" =
-          nrow(subarea_sf) >= nrow(subarea_unique_tb))
-
-subarea_prodes_file <- file.path(out_dir, "prodes_subarea.rds")
+# NOTE: To save time, check if we already did this computation.
+subarea_prodes_file <- file.path(tmp_dir, "prodes_subarea.rds")
 if (reuse_temporal_files && file.exists(subarea_prodes_file)) {
     warning("Existing version of subarea_prodes. I'm gonna use it!")
     subarea_prodes <- readRDS(subarea_prodes_file)
 } else {
-    # NOTE: This takes long!
     subarea_prodes <-
         terra::extract(x = terra::rast(prodes_raster),
-                       y = terra::vect(subarea_unique_sf["xy_id"]),
+                       y = terra::vect(subarea_flat_sf),
+#TODO: Add the use of the mode to the slides!
                        fun = the_mode,
-                       ID = TRUE,
+                       ID = FALSE,
                        weights = FALSE,
                        exact = FALSE,
                        touches = FALSE,
@@ -190,21 +130,18 @@ if (reuse_temporal_files && file.exists(subarea_prodes_file)) {
     saveRDS(subarea_prodes, file = subarea_prodes_file)
 }
 
-stopifnot("Some PRODES data is missing" =
-          nrow(subarea_prodes) == nrow(subarea_unique_sf))
-
 # Get the PRODES' view date mode in each subarea.
-subarea_prodes_date_file <- file.path(out_dir, "prodes_subarea_date.rds")
+# NOTE: To save time, check if we already did this computation.
+subarea_prodes_date_file <- file.path(tmp_dir, "prodes_subarea_date.rds")
 if (reuse_temporal_files && file.exists(subarea_prodes_date_file)) {
     warning("Existing version of subarea_prodes_date_found. I'm gonna use it!")
     subarea_prodes_date <- readRDS(subarea_prodes_date_file)
 } else {
-    # NOTE: This takes long!
     subarea_prodes_date <-
         terra::extract(x = terra::rast(prodes_viewdate),
-                       y = terra::vect(subarea_unique_sf["xy_id"]),
+                       y = terra::vect(subarea_flat_sf),
                        fun = the_mode,
-                       ID = TRUE,
+                       ID = FALSE,
                        weights = FALSE,
                        exact = FALSE,
                        touches = FALSE,
@@ -213,111 +150,42 @@ if (reuse_temporal_files && file.exists(subarea_prodes_date_file)) {
     saveRDS(subarea_prodes_date, file = subarea_prodes_date_file)
 }
 
-stopifnot("Some PRODES VIEWDATE data is missing" =
-          nrow(subarea_prodes_date) == nrow(subarea_unique_sf))
+subarea_flat_sf <- cbind(subarea_flat_sf, subarea_prodes, subarea_prodes_date)
 
-# sf::write_sf(subarea_unique_sf,
-#              dsn = file.path(out_dir, "deter_warning_recurrence.gpkg"),
-#              layer = "subarea_unique_sf")
+rm(subarea_prodes, subarea_prodes_date)
+rm(subarea_prodes_file, subarea_prodes_date_file)
+rm(prodes_raster, prodes_viewdate)
 
-rm(subarea_unique_sf)
-rm(subarea_prodes_file)
-rm(subarea_prodes_date_file)
-rm(prodes_raster)
-rm(prodes_viewdate)
-
-# Recode subarea_prodes' PRODES codes to PRODES years.
 subarea_prodes <-
-    subarea_prodes %>%
+    subarea_flat_sf %>%
+    sf::st_drop_geometry() %>%
     tibble::as_tibble() %>%
-    magrittr::set_colnames(c("row_id", "prodes_code")) %>%
-    dplyr::mutate(row_id = as.integer(row_id),
+    dplyr::mutate(prodes_date = as.Date(prodes_date, origin = "1970-01-01"),
                   prodes_code = as.integer(prodes_code),
                   prodes_name = dplyr::recode(prodes_code,
                                               !!!prodes_classes,
                                               .default = NA_character_,
-                                              .missing = NA_character_))
-
-# Recode subarea_prodes_date
-subarea_prodes_date <-
-    subarea_prodes_date %>%
-    tibble::as_tibble() %>%
-    magrittr::set_colnames(c("row_id", "prodes_date")) %>%
-    dplyr::mutate(row_id = as.integer(row_id),
-                  prodes_date = as.Date(prodes_date,
-                                        origin = "1970-01-01"))
-
-stopifnot(nrow(subarea_prodes) == nrow(subarea_unique_tb))
-stopifnot(nrow(subarea_prodes_date) == nrow(subarea_prodes))
-
-# Join PRODES class and viewdate.
-# Add the PRODES date estimated from CLASSNAME.
-subarea_prodes <-
-    subarea_prodes %>%
-    dplyr::left_join(subarea_prodes_date, by = "row_id") %>%
-    dplyr::right_join(subarea_unique_tb, by = "row_id") %>%
-    dplyr::select(-row_id, -subarea_id, -prodes_code) %>%
+                                              .missing = NA_character_)) %>%
+    #dplyr::select(-prodes_code) %>%
     dplyr::rename(CLASSNAME = prodes_name,
                   VIEW_DATE = prodes_date) %>%
-    dplyr::mutate(data_source = "PRODES",
-                  VIEW_DATE_est = dplyr::if_else(
-                      stringr::str_starts(CLASSNAME, "d"),
-                      stringr::str_c(stringr::str_sub(CLASSNAME, 2, 5),
-                                     "-08-01"),
-                      NA_character_),
-                  VIEW_DATE_est = lubridate::as_date(VIEW_DATE_est)) %>%
+    dplyr::mutate(data_source = "PRODES") %>%
     dplyr::filter(!is.na(CLASSNAME),
                   !is.na(VIEW_DATE))
 
 stopifnot("Unique xy_ids expected" =
           length(unique(subarea_prodes[["xy_id"]])) == nrow(subarea_prodes))
 
-rm(subarea_unique_tb)
-rm(subarea_prodes_date)
-
-print("Difference between theoretical and actual VIEW_DATE of deforestation:")
-# NOTE: The median is at most 14 days off from the theoretical PRODES VIEW_DATE.
-#       However the SD is up to 241 days, the minimum is 4759 days, and the
-#       maximum up to 732 days.
-# NOTE: Don't use the VIEW_DATE. Use the theoretical PRODES data of
-#       deforestation.
-subarea_prodes %>%
-    dplyr::filter(stringr::str_starts(CLASSNAME, "d")) %>%
-    dplyr::mutate(
-        view_diff = difftime(VIEW_DATE_est, VIEW_DATE, units = "days")
-    ) %>%
-    group_by(CLASSNAME) %>%
-    summarize(min = min(view_diff),
-              mean = mean(view_diff),
-              median = stats::median(view_diff),
-              max = max(view_diff),
-              sd = sd(view_diff)) %>%
-    knitr::kable()
-
 
 #---- Join subarea_prodes to DETER subareas ----
-
-subarea_prodes <-
-    data.table::setDT(subarea_prodes,
-                      key = "xy_id")
-
-prodes_ids <-
-    subarea_prodes %>%
-    pull(xy_id)
 
 subarea_dt <-
     subarea_dt %>%
     dplyr::mutate(data_source = "DETER") %>%
-    tibble::as_tibble() %>%
     dplyr::bind_rows(subarea_prodes) %>%
-    dplyr::filter(xy_id %in% prodes_ids)
+    data.table::setDT(key = "xy_id")
 
-rm(prodes_ids)
 rm(subarea_prodes)
-
-subarea_dt <-
-    data.table::setDT(subarea_dt,
-                      key = "xy_id")
 
 # Save data to package.
 usethis::use_data(subarea_dt, subarea_sf)

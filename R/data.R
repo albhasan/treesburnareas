@@ -37,7 +37,6 @@
 #'   year: PRODES year,
 #'   data_source: Source of the data; either DETER or PRODES,
 #'   n_warnings_deter: Number of DETER warnings in a subarea,
-#'   VIEW_DATE_est: Estimated date of PRODES detection (August of PRODES year).
 NULL
 
 #' @title sf object with the subareas of deforestation alerts from 2008 to 2021

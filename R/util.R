@@ -15,3 +15,7 @@ the_mode <- function(x) {
     ux[which.max(tabulate(match(x, ux)))]
 }
 
+utils::globalVariables(c(
+    ".", # magrittr
+    ".x", ":=" # dplyr
+))

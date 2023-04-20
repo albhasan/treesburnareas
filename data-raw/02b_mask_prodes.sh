@@ -6,9 +6,10 @@
 
 #---- Setup ----
 
-TIF_FILE="/home/alber/data/prodes/amazonia/PDigital2000_2021_AMZ_raster_v20220915_bioma.tif"
-OUT_TIF="/home/alber/data/prodes/prodes_mask.tif"
-OUT_VEC="/home/alber/data/prodes/prodes_mask.gpkg"
+# NOTE: Use the biome, not the BLA.
+TIF_FILE="/home/alber/Documents/data/prodes/amazonia/prodes_raster.tif"
+OUT_TIF="/home/alber/Documents/data/prodes/amazonia/prodes_mask.tif"
+OUT_VEC="/home/alber/Documents/data/prodes/amazonia/prodes_mask.gpkg"
 VEC_NAME=prodes_mask
 
 

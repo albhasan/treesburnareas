@@ -13,28 +13,26 @@ get_plot_area_by_state_year_type <- function(subarea_dt) {
     data_source <- in_prodes <- UF <- CLASSNAME <- year <- subarea_ha <- NULL
     subarea_km2 <- NULL
 
+    p_years <- sort(unique(subarea_dt[["year"]]))
+    b_states <- sort(unique(subarea_dt[["UF"]]))
+    # class_levels <- c("Mining", "Burn scar", "Clear cut", "Geometric slash",
+    #                   "Slash with veg.", "Untidy slash", "Selective cut",
+    #                   "Degradation")
+    class_levels <- c( "MINERACAO", "CICATRIZ_DE_QUEIMADA", "DESMATAMENTO_CR",
+                      "CS_GEOMETRICO", "DESMATAMENTO_VEG", "CS_DESORDENADO",
+                      "CORTE_SELETIVO", "DEGRADACAO")
+
     subarea_dt %>%
         dplyr::group_by(UF, CLASSNAME, year) %>%
-        dplyr::summarize(subarea_ha = sum(subarea_ha)) %>%
+        dplyr::summarize(subarea_km2 = sum(subarea_ha)/100) %>%
         dplyr::ungroup() %>%
         tibble::as_tibble() %>%
-        dplyr::mutate(subarea_km2 = subarea_ha/100,
-                      year = factor(as.character(year),
-                                    levels = c("2017", "2018", "2019",
-                                               "2020", "2021"),
+        dplyr::mutate(year = factor(as.character(year),
+                                    levels = as.character(p_years),
                                     ordered = TRUE),
-                      UF = factor(UF, levels = c("AC", "AM", "AP", "MA", "MT",
-                                                 "PA", "RO", "RR", "TO"),
-                                  ordered = TRUE),
+                      UF = factor(UF, levels = b_states, ordered = TRUE),
                       CLASSNAME = factor(CLASSNAME,
-                                         levels = c("Mining",
-                                                    "Burn scar",
-                                                    "Clear cut",
-                                                    "Geometric slash",
-                                                    "Slash with veg.",
-                                                    "Untidy slash",
-                                                    "Selective cut",
-                                                    "Degradation"),
+                                         levels = class_levels,
                                          ordered = TRUE)) %>%
         dplyr::arrange(UF, CLASSNAME, year, subarea_km2) %>%
     # NOTE: To use personlaized colors, use a named vector "cat" = "hexcolor"
@@ -178,8 +176,8 @@ get_plot_area_by_warnings <- function(subarea_dt, area_breaks) {
 #' @return            A ggplot2 object.
 #' @export
 get_plot_area_by_warnings_state <- function(subarea_dt, area_breaks) {
-    area_type <- data_source <- in_prodes <- n_warnings <- subarea_ha <- NULL
-    UF <- xy_id <- NULL
+    area_type <- data_source <- in_prodes <- n_warnings <- prop <- NULL
+    subarea_ha <- UF <- xy_id <- NULL
 
     subarea_dt %>%
         dplyr::group_by(xy_id) %>%

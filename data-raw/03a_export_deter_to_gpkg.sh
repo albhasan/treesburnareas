@@ -1,6 +1,6 @@
 #!/bin/bash
 ###############################################################################
-# EXPORT DETER SHP TO GEOPACKAGE AND FIX THEIR POLYGONS USING GRASS GIS.
+# EXPORT DETER SHP TO GEOPACKAGE AND FIX THEIR POLYGONS.
 ###############################################################################
 
 

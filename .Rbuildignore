@@ -27,3 +27,12 @@
 ^LICENSE\.md$
 ^TODO$
 
+^.*\.aux$
+^.*\.log$
+^.*\.nav$
+^.*\.out$
+^.*\.pdf$
+^.*\.snm$
+^.*\.toc$
+^.*\.png$
+

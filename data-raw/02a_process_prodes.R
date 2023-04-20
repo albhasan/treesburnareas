@@ -1,119 +1,125 @@
 #!/usr/bin/env Rscript
 ###############################################################################
 # Proces PRODES data.
+# - Rasterize PRODES using PRODES' shapefiles
 #------------------------------------------------------------------------------
-# NOTE: To ensure accuracy, we rasterize PRODES data on our own.
+# NOTE: We rasterize the PRODES shapefiles to get acces to the VIEW_DATE column
+#       and to be sure the raster VIEW_DATE fits the PRODES raster. Our PRODES
+#       raster doesn't fit exactly the TerraBrasilies raster. This could, for
+#       example, change the results of computing the mode in each DETER
+#       subarea.
 ###############################################################################
 
 library(dplyr)
+library(ensurer)
+library(readr)
 library(sf)
+library(tidyr)
 library(terra)
-
 
 
 #---- Set up ----
 
-out_dir <- "/home/alber/data/prodes/amazonia"
-stopifnot(dir.exists(out_dir))
+out_directory <- "/home/alber/Documents/data/prodes/amazonia"
+stopifnot(dir.exists(out_directory))
 
-prodes_raster   <- file.path(out_dir, "prodes_raster.tif")
-prodes_viewdate <- file.path(out_dir, "prodes_viewdate.tif")
+prodes_year <- "2021"
 
-clo_shp <- "/home/alber/data/prodes/amazonia/cloud_biome.shp"
-d07_shp <- paste0("/home/alber/data/prodes/amazonia/",
-                  "accumulated_deforestation_2007_biome.shp")
-def_shp <- "/home/alber/data/prodes/amazonia/yearly_deforestation_biome.shp"
-for_shp <- "/home/alber/data/prodes/amazonia/forest_biome_2021.shp"
-hyd_shp <- "/home/alber/data/prodes/amazonia/hydrography_biome.shp"
-nof_shp <- "/home/alber/data/prodes/amazonia/no_forest_biome.shp"
-res_shp <- "/home/alber/data/prodes/amazonia/residual_biome.shp"
+prodes_raster   <- file.path(out_directory, "prodes_raster.tif")
+prodes_viewdate <- file.path(out_directory, "prodes_viewdate.tif")
+rm(out_directory)
+
+# NOTE: Use the biome, not the BLA.
 prodes_tif <- paste0("/home/alber/data/prodes/amazonia/",
                      "PDigital2000_2021_AMZ_raster_v20220915_bioma.tif")
+cloud_shp <- "/home/alber/data/prodes/amazonia/cloud_biome.shp"
+def07_shp <- paste0("/home/alber/data/prodes/amazonia/",
+                  "accumulated_deforestation_2007_biome.shp")
+defor_shp <- "/home/alber/data/prodes/amazonia/yearly_deforestation_biome.shp"
+fores_shp <- "/home/alber/data/prodes/amazonia/forest_biome_2021.shp"
+hydro_shp <- "/home/alber/data/prodes/amazonia/hydrography_biome.shp"
+nofor_shp <- "/home/alber/data/prodes/amazonia/no_forest_biome.shp"
+resid_shp <- "/home/alber/data/prodes/amazonia/residual_biome.shp"
 
-stopifnot("PRODES files not found!" = file.exists(clo_shp, d07_shp, def_shp,
-                                                  for_shp, hyd_shp, nof_shp,
-                                                  res_shp, prodes_tif))
-
-
-# NOTE: These codes were obtained from the medata of
-#       PDigital2000_2021_AMZ_raster_v20220915_bioma.tif and adjusted to match
-#       the class names used in the PRODES shapefiles.
-print("WARNING: Make sure the PRODES codes are updated!")
-prodes_codes <- c(
-    "r2014"           =  54L,
-    "r2012"           =  52L,
-    "r2021"           =  61L,
-    "r2013"           =  53L,
-    "r2018"           =  58L,
-    "r2017"           =  57L,
-    "r2011"           =  51L,
-    "r2020"           =  60L,
-    "r2016"           =  56L,
-    "r2010"           =  50L,
-    "r2019"           =  59L,
-    "r2015"           =  55L,
-    "d2012"           =  12L,
-    "d2014"           =  14L,
-    "d2013"           =  13L,
-    "d2011"           =  11L,
-    "d2010"           =  10L,
-    "d2009"           =   9L,
-    "d2015"           =  15L,
-    "d2017"           =  17L,
-    "d2018"           =  18L,
-    "d2016"           =  16L,
-    "d2020"           =  20L,
-    "d2019"           =  19L,
-    "d2021"           =  21L,
-    "d2008"           =   8L,
-    "HIDROGRAFIA"     =  91L,
-    "NUVEM_2021"      =  32L,
-    "NAO_FLORESTA"    = 101L,
-    "NAO_FLORESTA2"   = 101L,
-    "d2007"           =   7L,
-    "FOREST_2021"     = 100L
-)
-
+stopifnot("PRODES files not found!" = file.exists(cloud_shp, def07_shp,
+                                                  defor_shp, fores_shp,
+                                                  hydro_shp, nofor_shp,
+                                                  resid_shp, prodes_tif))
+stopifnot("The PRODES year doesn't match the PRODES tif" =
+          all(stringr::str_detect(basename(prodes_tif),
+                                  pattern = prodes_year)))
+stopifnot("The PRODES year doesn't match the PRODES forest shp" =
+          all(stringr::str_detect(basename(fores_shp),
+                                  pattern = prodes_year)))
 
 
 #---- Rasterize PRODES ----
-# NOTE: We had to rasterize PRODES because of spatial missmatches.
+
+# Get PRODES codes.
+prodes_codes <-
+    treesburnareas::get_prodes_codes() %>%
+    tidyr::pivot_longer(cols = -tidyselect::any_of("prodes_code"),
+                        names_to = c("X1", "source", "year"),
+                        names_sep = "_",
+                        values_to = "prodes_class") %>%
+    dplyr::filter(source == "shp",
+                  year == prodes_year) %>%
+    dplyr::select(prodes_code, prodes_class) %>%
+    ensurer::ensure_that(
+        nrow(.) > 0,
+        err_desc = "No PRODES codes found for the given type and year.") %>%
+    (function(x) {
+        x %>%
+            dplyr::pull(prodes_code) %>%
+            magrittr::set_names(x[["prodes_class"]]) %>%
+            return()
+    })
 
 # Read PRODES' shapefiles.
-clo_sf <- sf::read_sf(clo_shp)
-d07_sf <- sf::read_sf(d07_shp)
-def_sf <- sf::read_sf(def_shp)
-for_sf <- sf::read_sf(for_shp)
-hyd_sf <- sf::read_sf(hyd_shp)
-nof_sf <- sf::read_sf(nof_shp)
-res_sf <- sf::read_sf(res_shp)
+cloud_sf <- sf::read_sf(cloud_shp)
+def07_sf <- sf::read_sf(def07_shp)
+defor_sf <- sf::read_sf(defor_shp)
+fores_sf <- sf::read_sf(fores_shp)
+hydro_sf <- sf::read_sf(hydro_shp)
+nofor_sf <- sf::read_sf(nofor_shp)
+resid_sf <- sf::read_sf(resid_shp)
+rm(cloud_shp, def07_shp, defor_shp, fores_shp, hydro_shp, nofor_shp, resid_shp)
 
 # Find the common names among PRODES' shapefiles.
-col_names <- Reduce(intersect, lapply(list(clo_sf, d07_sf, def_sf, for_sf,
-                                           hyd_sf, nof_sf, res_sf),
-                                      colnames))
+common_names <- Reduce(intersect, lapply(list(cloud_sf, def07_sf, defor_sf,
+                                              fores_sf, hydro_sf, nofor_sf,
+                                              resid_sf),
+                                         colnames))
 
 # Bind the PRODES' shapefiles into one.
-prodes_sf <- rbind(clo_sf[clo_sf$class_name == "NUVEM_2021", col_names],
-                   d07_sf[col_names],
-                   def_sf[col_names],
-                   for_sf[col_names],
-                   hyd_sf[col_names],
-                   nof_sf[col_names],
-                   res_sf[col_names])
-
-stopifnot("Missing PRODES codes found!" = unique(prodes_sf$class_name) %in%
-          names(prodes_codes))
+prodes_sf <- rbind(cloud_sf[cloud_sf$class_name == paste0("NUVEM_",
+                                                          prodes_year),
+                            common_names],
+                   def07_sf[common_names],
+                   defor_sf[common_names],
+                   fores_sf[common_names],
+                   hydro_sf[common_names],
+                   nofor_sf[common_names],
+                   resid_sf[common_names])
+rm(cloud_sf, def07_sf, defor_sf, fores_sf, hydro_sf, nofor_sf, resid_sf,
+   common_names)
 
 # Recode class names into integers.
 prodes_sf <-
     prodes_sf %>%
-    dplyr::mutate(code = dplyr::recode(class_name, !!!prodes_codes))
+    dplyr::mutate(prodes_code = dplyr::recode(class_name, !!!prodes_codes,
+                                              .default = NA_integer_,
+                                              .missing = NA_integer_)) %>%
+    dplyr::select(prodes_code, image_date)
+
+stopifnot("Unmatched PRODES codes found!" =
+          sum(is.na(prodes_sf[["prodes_code"]])) == 0)
 
 # Rasterize PRODES.
-terra::rasterize(x = terra::vect(prodes_sf),
-                 y = terra::rast(prodes_tif),
-                 field = "code",
+terra::rasterize(terra::vect(prodes_sf),
+                 terra::rast(prodes_tif),
+                 fun = "min",
+                 field = "prodes_code",
                  background = 255,
                  touches = FALSE,
                  update = FALSE,
@@ -127,7 +133,6 @@ terra::rasterize(x = terra::vect(prodes_sf),
                              NAflag = 255))
 
 
-
 #---- Rasterize PRODES' view date ----
 
 # NOTE: Convert PRODES' image date to number of days since 1970-01-01.
@@ -139,6 +144,7 @@ prodes_date_sf <-
 
 terra::rasterize(x = terra::vect(prodes_date_sf),
                  y = terra::rast(prodes_tif),
+                 fun = "min",
                  field = "prodes_date",
                  background = -32768,
                  touches = FALSE,
