@@ -1,9 +1,26 @@
+\PassOptionsToPackage{table}{xcolor}
 \documentclass[aspectratio=169]{beamer}
 
 \setbeamertemplate{footline}[frame number]
 
-\usepackage{hyperref}
+% \usepackage{hyperref}
 \usepackage{caption}
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{colortbl}
+\usepackage{xcolor}
+
 \captionsetup[figure]{labelformat=empty}
 
 \title{Exploratory analysis of Recurrent deforestation warnings in the 
@@ -19,10 +36,13 @@ Brazilian Amazon}
 
 \begin{document}
 
-
-%---- Introduction ----
-
 \frame{\titlepage}
+
+
+
+
+
+\section{Introduction}
 
 \begin{frame}
     \frametitle{Introduction}
@@ -39,7 +59,7 @@ Brazilian Amazon}
 
 
 
-%---- DETER ----
+\subsection{DETER}
 
 \begin{frame}
     \frametitle{What is DETER?}
@@ -85,13 +105,14 @@ Brazilian Amazon}
 \end{frame}
 
 
-%---- DETER subareas ----
+
+\subsection{DETER subareas}
 
 \begin{frame}
     \frametitle{DETER subareas}
     \begin{itemize}
         \item The spatial properties of DETER warning are inconsistent along 
-            time (shape, size, area, position).
+            time (shape, size, position, orientation).
         \item DETER subareas maintain their spatial properties along time.
     \end{itemize}
 \end{frame}
@@ -105,6 +126,12 @@ Brazilian Amazon}
         \label{fig:deter_subareas}
     \end{figure}
 \end{frame}
+
+
+
+
+
+\section{DETER subareas EDA}
 
 \begin{frame}
     \frametitle{DETER subareas}
@@ -147,8 +174,25 @@ Brazilian Amazon}
     \end{figure}
 \end{frame}
 
+
+
+
+
+\section{Subareas trajectories} 
+
 \begin{frame}
-    \frametitle{DETER subareas}
+    \frametitle{Subarea trajectories}
+    \begin{itemize}
+        \item Overlaped subareas organized along time describe trajectories of
+            change.
+    \end{itemize}
+\end{frame}
+
+
+\subsection{Trajectories (DETER)} 
+
+\begin{frame}
+    \frametitle{DETER subareas (2 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
         {./figures/plot_deter_subarea_trajectory_2.png}
@@ -156,9 +200,13 @@ Brazilian Amazon}
         \label{fig:deter_subarea_trajectory_2}
     \end{figure}
 \end{frame}
+\begin{frame}[allowframebreaks]
+    \frametitle{DETER subareas (2 warnings)}
+    \input{./tables/tb_deter_subarea_trajectory_2.tex}
+\end{frame}
 
 \begin{frame}
-    \frametitle{DETER subareas}
+    \frametitle{DETER subareas (3 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
         {./figures/plot_deter_subarea_trajectory_3.png}
@@ -166,9 +214,13 @@ Brazilian Amazon}
         \label{fig:deter_subarea_trajectory_3}
     \end{figure}
 \end{frame}
+\begin{frame}[allowframebreaks]
+    \frametitle{DETER subareas (3 warnings)}
+    \input{./tables/tb_deter_subarea_trajectory_3.tex}
+\end{frame}
 
 \begin{frame}
-    \frametitle{DETER subareas}
+    \frametitle{DETER subareas (4 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
         {./figures/plot_deter_subarea_trajectory_4.png}
@@ -176,9 +228,13 @@ Brazilian Amazon}
         \label{fig:deter_subarea_trajectory_4}
     \end{figure}
 \end{frame}
+\begin{frame}[allowframebreaks]
+    \frametitle{DETER subareas (4 warnings)}
+    \input{./tables/tb_deter_subarea_trajectory_4.tex}
+\end{frame}
 
 \begin{frame}
-    \frametitle{DETER subareas}
+    \frametitle{DETER subareas (5 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
         {./figures/plot_deter_subarea_trajectory_5.png}
@@ -186,9 +242,17 @@ Brazilian Amazon}
         \label{fig:deter_subarea_trajectory_5}
     \end{figure}
 \end{frame}
+\begin{frame}[allowframebreaks]
+    \frametitle{DETER subareas (5 warnings)}
+    \input{./tables/tb_deter_subarea_trajectory_4.tex}
+\end{frame}
+
+
+
+\subsection{Trajectories (DETER \& PRODES)} 
 
 \begin{frame}
-    \frametitle{DETER - PRODES subareas}
+    \frametitle{DETER \& PRODES subareas (2 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
         {./figures/plot_deter_prodes_subarea_trajectory_2.png}
@@ -196,9 +260,13 @@ Brazilian Amazon}
         \label{fig:deter_prodes_subarea_trajectory_2}
     \end{figure}
 \end{frame}
+\begin{frame}[allowframebreaks]
+    \frametitle{DETER \& PRODES subareas (2 warnings)}
+    \input{./tables/tb_deter_prodes_subarea_trajectory_2.tex}
+\end{frame}
 
 \begin{frame}
-    \frametitle{DETER - PRODES subareas}
+    \frametitle{DETER \& PRODES subareas (3 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
         {./figures/plot_deter_prodes_subarea_trajectory_3.png}
@@ -206,9 +274,14 @@ Brazilian Amazon}
         \label{fig:deter_prodes_subarea_trajectory_3}
     \end{figure}
 \end{frame}
+\begin{frame}[allowframebreaks]
+    \frametitle{DETER \& PRODES subareas (3 warnings)}
+    \input{./tables/tb_deter_prodes_subarea_trajectory_3.tex}
+\end{frame}
+
 
 \begin{frame}
-    \frametitle{DETER - PRODES subareas}
+    \frametitle{DETER \& PRODES subareas (4 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
         {./figures/plot_deter_prodes_subarea_trajectory_4.png}
@@ -216,10 +289,14 @@ Brazilian Amazon}
         \label{fig:deter_prodes_subarea_trajectory_4}
     \end{figure}
 \end{frame}
+\begin{frame}[allowframebreaks]
+    \frametitle{DETER \& PRODES subareas (4 warnings)}
+    \input{./tables/tb_deter_prodes_subarea_trajectory_4.tex}
+\end{frame}
 
 
 \begin{frame}
-    \frametitle{DETER - PRODES subareas}
+    \frametitle{DETER \& PRODES subareas (5 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
         {./figures/plot_deter_prodes_subarea_trajectory_5.png}
@@ -227,9 +304,14 @@ Brazilian Amazon}
         \label{fig:deter_prodes_subarea_trajectory_5}
     \end{figure}
 \end{frame}
+\begin{frame}[allowframebreaks]
+    \frametitle{DETER \& PRODES subareas (5 warnings)}
+    \input{./tables/tb_deter_prodes_subarea_trajectory_5.tex}
+\end{frame}
+
 
 \begin{frame}
-    \frametitle{DETER - PRODES subareas}
+    \frametitle{DETER \& PRODES subareas (6 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
         {./figures/plot_deter_prodes_subarea_trajectory_6.png}
@@ -237,9 +319,16 @@ Brazilian Amazon}
         \label{fig:deter_prodes_subarea_trajectory_6}
     \end{figure}
 \end{frame}
+\begin{frame}[allowframebreaks]
+    \frametitle{DETER \& PRODES subareas (6 warnings)}
+    \input{./tables/tb_deter_prodes_subarea_trajectory_6.tex}
+\end{frame}
 
 
-%---- Closing ----
+
+
+
+\section{Closing}
 
 \begin{frame}
     \frametitle{Final remarks}

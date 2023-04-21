@@ -271,6 +271,7 @@ get_plot_days_first_to_last <- function(subarea_dt, area_breaks){
         return()
 }
 
+
 #' @title Build a Sankey diagram of DETER warnings.
 #'
 #' @name get_plot_sankey
@@ -279,15 +280,13 @@ get_plot_days_first_to_last <- function(subarea_dt, area_breaks){
 #' This function creates a Sankey diagram between DETER subareas for the given
 #' number of warnings.
 #' @param data_tb A data.table object specifically prepared for this function.
-#' @param n_warnings A single integer. Number of warnings to use.
 #' @return            A ggplot2 object.
 #' @export
-get_plot_sankey <- function(data_tb, n_warnings) {
+get_plot_sankey <- function(data_tb) {
     CLASSNAME <- group_row <- n_warn_p <- next_x <- next_node <- node <- NULL
     subarea_ha <- subarea_step <- x <- xy_id <- NULL
 
     data_tb %>%
-        dplyr::filter(n_warn_p == n_warnings) %>%
         dplyr::group_by(xy_id) %>%
         dplyr::mutate(group_row = dplyr::row_number(),
                       subarea_step = stringr::str_c("step_", group_row)) %>%

@@ -28,7 +28,6 @@ in_prodes: Does the subarea intersect the PRODES mask,
 year: PRODES year,
 data_source: Source of the data; either DETER or PRODES,
 n_warnings_deter: Number of DETER warnings in a subarea,
-VIEW_DATE_est: Estimated date of PRODES detection (August of PRODES year).
 }
 \usage{
 data(subarea_dt)

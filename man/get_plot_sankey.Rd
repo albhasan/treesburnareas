@@ -4,12 +4,10 @@
 \alias{get_plot_sankey}
 \title{Build a Sankey diagram of DETER warnings.}
 \usage{
-get_plot_sankey(data_tb, n_warnings)
+get_plot_sankey(data_tb)
 }
 \arguments{
 \item{data_tb}{A data.table object specifically prepared for this function.}
-
-\item{n_warnings}{A single integer. Number of warnings to use.}
 }
 \value{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{       A ggplot2 object.

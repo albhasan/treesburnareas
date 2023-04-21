@@ -1,18 +1,19 @@
 ###############################################################################
 # Analysis of the recurrence of DETER warnings.
 #------------------------------------------------------------------------------
+# - Create the figures for the slides.
+###############################################################################
 
-create_plots <- function(out_dir, save_figs = TRUE) {
+create_plots <- function(out_dir) {
 
-    # create_plots(out_dir = "~/Documents/github/treesburnareas/inst/extdata/slides/exploratory_data_analysis/figures",
-    #              save_figs = TRUE)
+    # create_plots(out_dir = "~/Documents/github/treesburnareas/inst/extdata/slides/exploratory_data_analysis")
+
 
     CLASSNAME <- data_source <- diff_days <- in_prodes <- NULL
-    last_CLASSNAME <- n_warn_p <- subarea_ha <- NULL
-    VIEW_DATE <- xy_id <- NULL
+    last_CLASSNAME <- n_warnings <- subarea_ha <- NULL
+    warning_pos <- VIEW_DATE <- xy_id <- NULL
 
-    if (save_figs)
-        stopifnot("Directory not found!" = dir.exists(out_dir))
+    stopifnot("Directory not found!" = dir.exists(out_dir))
 
 
     #---- Setup ----
@@ -36,6 +37,17 @@ create_plots <- function(out_dir, save_figs = TRUE) {
     # Only include subareas ocurring before this date:
     max_date <- as.Date("2021-08-01")
 
+    # Size of the figures.
+    height <- 210
+    width <- 297
+    units <- "mm"
+
+    # Directories for writing figures and tables.
+    out_fig <- file.path(out_dir, "figures")
+    out_tab <- file.path(out_dir, "tables")
+    stopifnot("Directory for storing figures not found!" = dir.exists(out_fig))
+    stopifnot("Directory for storing tables not found!" = dir.exists(out_tab))
+
 
     #---- Treemap: DETER warning area by state, year, warning type and area----
 
@@ -45,20 +57,12 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                       in_prodes == TRUE,
                       VIEW_DATE < max_date) %>%
         get_plot_area_by_state_year_type()
-    if (save_figs) {
-        ggplot2::ggsave(
-            plot = plot_area_by_state_year_type,
-            filename = file.path(out_dir,
-                                 "plot_deter_area_by_state_pyear_type.png"),
-            height = 210,
-            width = 297,
-            units = "mm"
-        )
-    } else {
-        plot_area_by_state_year_type +
-            ggplot2::ggtitle(paste("Area of DETER warnings by state, year",
-                                   "(PRODES), and type"))
-    }
+    ggplot2::ggsave(
+        plot = plot_area_by_state_year_type,
+        filename = file.path(out_fig,
+                             "plot_deter_area_by_state_pyear_type.png"),
+        height = height, width = width, units = units
+    )
 
 
     #---- Point density: DETER subareas by state, year, warning type and area
@@ -70,21 +74,12 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                       in_prodes == TRUE,
                       VIEW_DATE < max_date) %>%
         get_plot_density_area_ndays()
-    if (save_figs) {
-        ggplot2::ggsave(
-            plot = plot_density_area_ndays,
-            filename = file.path(out_dir,
-               "plot_deter_subarea_density_by_state_first-type_nwarnings.png"),
-            height = 210,
-            width = 297,
-            units = "mm"
-        )
-    } else {
-         plot_density_area_ndays +
-            ggplot2::ggtitle(
-                paste("DETER area by subarea, state, first type,",
-                      "and number of days between warnings"))
-    }
+    ggplot2::ggsave(
+        plot = plot_density_area_ndays,
+        filename = file.path(out_fig,
+           "plot_deter_subarea_density_by_state_first-type_nwarnings.png"),
+        height = height, width = width, units = units
+    )
 
 
     #---- Histogram DETER subareas by number of warnings ----
@@ -95,20 +90,12 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                       in_prodes == TRUE,
                       VIEW_DATE < max_date) %>%
         get_plot_area_by_warnings(area_breaks)
-    if (save_figs) {
-        ggplot2::ggsave(
-            plot = plot_area_by_warnings,
-            filename = file.path(out_dir,
-                                 "plot_deter_subarea_by_nwarnings.png"),
-            height = 210,
-            width = 297,
-            units = "mm"
-        )
-    } else {
-        plot_area_by_warnings +
-            ggplot2::ggtitle(paste("DETER area by subarea and number of",
-                                   "warnings in the Brazilian Amazon"))
-    }
+    ggplot2::ggsave(
+        plot = plot_area_by_warnings,
+        filename = file.path(out_fig,
+                             "plot_deter_subarea_by_nwarnings.png"),
+        height = height, width = width, units = units
+    )
 
 
     #---- Histogram DETER subareas by number of warnings by state ----
@@ -119,21 +106,12 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                       in_prodes == TRUE,
                       VIEW_DATE < max_date) %>%
         get_plot_area_by_warnings_state(area_breaks)
-    if (save_figs) {
-        ggplot2::ggsave(
-            plot = plot_area_by_warnings_state,
-            filename = file.path(out_dir,
-                                 "plot_deter_subarea_by_warnings_state.png"),
-            height = 210,
-            width = 297,
-            units = "mm"
-        )
-    } else {
-        plot_area_by_warnings_state +
-            ggplot2::ggtitle(
-                paste("Area of DETER warnings by",
-                      "number of warnings and state"))
-    }
+    ggplot2::ggsave(
+        plot = plot_area_by_warnings_state,
+        filename = file.path(out_fig,
+                             "plot_deter_subarea_by_warnings_state.png"),
+        height = height, width = width, units = units
+    )
 
 
     #---- Boxplot days between warnings by subarea ----
@@ -144,22 +122,15 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                       in_prodes == TRUE,
                       VIEW_DATE < max_date) %>%
         get_plot_days_first_to_last(area_breaks)
-    if (save_figs) {
-        ggplot2::ggsave(
-            plot =  plot_days_first_to_last,
-            filename = file.path(out_dir, "plot_deter_days_first_to_last.png"),
-            height = 210,
-            width = 297,
-            units = "mm"
-        )
-    } else {
-        plot_days_first_to_last +
-            ggplot2::ggtitle(paste("Number of days from the first to the last",
-                                   "DETER warnings",
-                                   "Amazon by Brazilian state"))
-    }
+    ggplot2::ggsave(
+        plot =  plot_days_first_to_last,
+        filename = file.path(out_fig,
+                             "plot_deter_days_first_to_last.png"),
+        height = height, width = width, units = units
+    )
 
-    #---- Sankey: Trajectories of subareas (only DETER) ----
+
+    #---- Trajectories of subareas (DETER only) ----
 
     plot_tb <-
         treesburnareas::subarea_dt %>%
@@ -170,68 +141,102 @@ create_plots <- function(out_dir, save_figs = TRUE) {
                       VIEW_DATE < max_date) %>%
         dplyr::arrange(xy_id, VIEW_DATE) %>%
         dplyr::group_by(xy_id) %>%
-        dplyr::mutate(n_warn_p = dplyr::n()) %>%
+        dplyr::mutate(n_warnings = dplyr::n(),
+                      warning_pos = dplyr::row_number(),
+                      CLASSNAME = stringr::str_replace_all(CLASSNAME,
+                                                           pattern = "_",
+                                                           replacement = " "),
+                      CLASSNAME = stringr::str_to_sentence(CLASSNAME)) %>%
         tidyr::fill(subarea_ha, .direction = "downup") %>%
         dplyr::ungroup() %>%
-        dplyr::select(subarea_ha, CLASSNAME, xy_id, n_warn_p, data_source) %>%
+        dplyr::select(subarea_ha, CLASSNAME, xy_id,
+                      n_warnings, warning_pos, data_source) %>%
         data.table::as.data.table()
 
-    # NOTE: I couldn't make ggsankey::geom_sankey use the variable subarea_ha.
-    for (i in sort(unique(plot_tb$n_warn_p))) {
-        if (i == 1)
-            next
-        my_plot <- get_plot_sankey(data_tb = plot_tb, n_warnings = i)
-        if (save_figs) {
-            ggplot2::ggsave(
-                plot = my_plot,
-                filename = file.path(
-                    out_dir,
-                    paste0("plot_deter_subarea_trajectory_", i, ".png")
-                ),
-                height = 210,
-                width = 297,
-                units = "mm"
-            )
-        } else {
-             my_plot +
-                ggplot2::ggtitle("Trajectory of subareas")
-        }
+    # Create latex tables.
+    table_ls <-
+        plot_tb %>%
+        dplyr::filter(n_warnings > 1) %>%
+        dplyr::group_by(n_warnings) %>%
+        dplyr::group_split(.keep = TRUE) %>%
+        purrr::map(get_trajectory_stats)
+
+    for (i in seq_along(table_ls)) {
+        table_ls %>%
+            magrittr::extract2(i) %>%
+            kableExtra::kbl(format = "latex",
+                            booktabs = TRUE,
+                            longtable = TRUE,
+                            linesep = "",
+                            digits = 1,
+                            label = paste0("tab:traj_deter_", i + 1),
+                            caption = NA) %>%
+            kableExtra::kable_styling(full_width = TRUE,
+                                      font_size = 7,
+                                      latex_options = "striped") %>%
+            kableExtra::collapse_rows(columns = 1:i,
+                                      latex_hline = "major",
+                                      valign = "middle") %>%
+            readr::write_file(file = file.path(out_tab,
+                                         paste0("tb_deter_subarea_trajectory_",
+                                                      i + 1, ".tex")),
+                              append = FALSE)
     }
 
-    rm(my_plot)
+    # Create Sankey figures.
+    # NOTE: I couldn't make ggsankey::geom_sankey use the variable subarea_ha.
+    plot_ls <-
+        plot_tb %>%
+        dplyr::filter(n_warnings > 1) %>%
+        dplyr::group_by(n_warnings) %>%
+        dplyr::group_split(.keep = TRUE) %>%
+        purrr::map(get_plot_sankey)
+    for (i in seq_along(plot_ls)) {
+        ggplot2::ggsave(
+            plot = plot_ls[[i]],
+            filename = file.path(
+                out_fig,
+                paste0("plot_deter_subarea_trajectory_", i + 1, ".png")
+            ),
+            height = height, width = width, units = units
+        )
+    }
+
+    rm(plot_ls)
+    rm(table_ls)
     rm(plot_tb)
 
 
-    #---- Sankey: Trajectories of subareas (DETER & PRODES) ----
+    #---- Trajectories of subareas (DETER & PRODES) ----
 
     # NOTE: Use only DETER subareas which have a PRODES match.
-    subareas_prodes <-
+
+    subareas_prodes_xyids <-
         treesburnareas::subarea_dt %>%
-        dplyr::filter(data_source == "PRODES",
-                      VIEW_DATE < max_date) %>%
-        dplyr::select(xy_id) %>%
-        dplyr::distinct(xy_id) %>%
-        dplyr::arrange(xy_id)
+        dplyr::filter(data_source == "PRODES") %>%
+        dplyr::pull(xy_id) %>%
+        unique() %>%
+        sort()
 
     plot_tb <-
         treesburnareas::subarea_dt %>%
         dplyr::filter(subarea_ha > min_subarea_ha  | is.na(subarea_ha),
                       !is.na(CLASSNAME),
-                      VIEW_DATE < max_date) %>%
+                      VIEW_DATE < max_date,
+                      xy_id %in% subareas_prodes_xyids) %>%
         dplyr::arrange(xy_id, VIEW_DATE) %>%
+        dplyr::select(CLASSNAME, xy_id, data_source, subarea_ha) %>%
         dplyr::group_by(xy_id) %>%
+        dplyr::mutate(n_warnings = dplyr::n(),
+                      warning_pos = dplyr::row_number()) %>%
+        # Fill in the areas of PRODES using DETER subareas.
         tidyr::fill(subarea_ha, .direction = "downup") %>%
-        dplyr::ungroup() %>%
-        dplyr::select(subarea_ha, CLASSNAME, xy_id, data_source) %>%
-        dplyr::left_join(y = subareas_prodes, by = "xy_id") %>%
-        dplyr::group_by(xy_id) %>%
-        dplyr::mutate(n_warn_p = dplyr::n()) %>%
         dplyr::ungroup() %>%
         dplyr::mutate(CLASSNAME = dplyr::case_match(CLASSNAME,
             c("d2007", "d2008", "d2009", "d2010", "d2011", "d2012",
               "d2013", "d2014", "d2015", "d2016", "d2017", "d2018", "d2019",
-              "d2020", "d2021") ~ "P_deforestation",
-            c( "r2010", "r2011", "r2012", "r2013", "r2014", "r2015", "r2016",
+              "d2020", "d2021") ~ "P_desmatamento",
+            c("r2010", "r2011", "r2012", "r2013", "r2014", "r2015", "r2016",
               "r2017", "r2018", "r2019", "r2020", "r2021") ~ "P_residual",
             "FOREST_2021" ~ "P_forest_2021",
             "HIDROGRAFIA" ~ "P_hidrografia",
@@ -240,31 +245,57 @@ create_plots <- function(out_dir, save_figs = TRUE) {
             .default = CLASSNAME)) %>%
         data.table::as.data.table()
 
-    # NOTE: I couldn't make ggsankey::geom_sankey use the variable subarea_ha.
-    for (i in sort(unique(plot_tb$n_warn_p))) {
-        if (i == 1)
-            next
-        my_plot <- get_plot_sankey(data_tb = plot_tb, n_warnings = i)
-        if (save_figs) {
-            ggplot2::ggsave(
-                plot = my_plot,
-                filename = file.path(
-                    out_dir,
-                    paste0("plot_deter_prodes_subarea_trajectory_", i, ".png")
-                ),
-                height = 210,
-                width = 297,
-                units = "mm"
-            )
-        } else {
-             my_plot +
-                ggplot2::ggtitle("Trajectory of subareas")
-        }
+    # Create latex tables.
+    table_ls <-
+        plot_tb %>%
+        dplyr::filter(n_warnings > 1) %>%
+        dplyr::group_by(n_warnings) %>%
+        dplyr::group_split(.keep = TRUE) %>%
+        purrr::map(get_trajectory_stats)
+    for (i in seq_along(table_ls)) {
+        table_ls %>%
+            magrittr::extract2(i) %>%
+            kableExtra::kbl(format = "latex",
+                            booktabs = TRUE,
+                            longtable = TRUE,
+                            linesep = "",
+                            digits = 1,
+                            label = paste0("tab:traj_deter_prodes", i + 1),
+                            caption = NA) %>%
+            kableExtra::kable_styling(full_width = TRUE,
+                                      font_size = 7,
+                                      latex_options = "striped") %>%
+            kableExtra::collapse_rows(columns = 1:i,
+                                      latex_hline = "major",
+                                      valign = "middle") %>%
+            readr::write_file(file = file.path(out_tab,
+                                  paste0("tb_deter_prodes_subarea_trajectory_",
+                                                      i + 1, ".tex")),
+                              append = FALSE)
     }
 
-    rm(my_plot)
+    # Create Sankey figures.
+    # NOTE: I couldn't make ggsankey::geom_sankey use the variable subarea_ha.
+    plot_ls <-
+        plot_tb %>%
+        dplyr::filter(n_warnings > 1) %>%
+        dplyr::group_by(n_warnings) %>%
+        dplyr::group_split(.keep = TRUE) %>%
+        purrr::map(get_plot_sankey)
+    for (i in seq_along(plot_ls)) {
+        ggplot2::ggsave(
+            plot = plot_ls[[i]],
+            filename = file.path(
+                out_fig,
+                paste0("plot_deter_prodes_subarea_trajectory_", i + 1, ".png")
+            ),
+            height = height, width = width, units = units
+        )
+    }
+    rm(plot_ls)
     rm(plot_tb)
-    rm(subareas_prodes)
+    rm(subareas_prodes_xyids)
+
 }
 
 
