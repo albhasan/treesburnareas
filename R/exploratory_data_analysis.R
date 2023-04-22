@@ -1,17 +1,24 @@
-###############################################################################
-# Analysis of the recurrence of DETER warnings.
-#------------------------------------------------------------------------------
-# - Create the figures for the slides.
-###############################################################################
-
+#' @title Create EDA plots and tables
+#'
+#' @name create_plots
+#'
+#' @description
+#' This function creates the figures and tables of the Exploratory Data
+#' Analysis of the Amazonia deforestation warnings issued by DETER.
+#' @param out_dir A path to a directory.
+#' @return out_dir (invisible).
+#' @examples
+#' \dontrun{
+#'     create_plots(out_dir = "~/Documents/report")
+#' }
+#' @export
 create_plots <- function(out_dir) {
-
-    # create_plots(out_dir = "~/Documents/github/treesburnareas/inst/extdata/slides/exploratory_data_analysis")
-
-
+    #TODO: make  parameters out of subarea_sf & subarea_dt
     CLASSNAME <- data_source <- diff_days <- in_prodes <- NULL
     last_CLASSNAME <- n_warnings <- subarea_ha <- NULL
     warning_pos <- VIEW_DATE <- xy_id <- NULL
+    area_ha <- max_area <- mean_area <- median_area <- min_area <- NULL
+    sd_area <- NULL
 
     stopifnot("Directory not found!" = dir.exists(out_dir))
 
@@ -150,7 +157,7 @@ create_plots <- function(out_dir) {
         tidyr::fill(subarea_ha, .direction = "downup") %>%
         dplyr::ungroup() %>%
         dplyr::select(subarea_ha, CLASSNAME, xy_id,
-                      n_warnings, warning_pos, data_source) %>%
+                      n_warnings, warning_pos) %>%
         data.table::as.data.table()
 
     # Create latex tables.
@@ -164,6 +171,11 @@ create_plots <- function(out_dir) {
     for (i in seq_along(table_ls)) {
         table_ls %>%
             magrittr::extract2(i) %>%
+            dplyr::select(-min_area, -max_area, -mean_area,
+                          -median_area, -sd_area ) %>%
+            dplyr::arrange(dplyr::desc(area_ha)) %>%
+            dplyr::slice(1:10) %>%
+            janitor::adorn_totals() %>%
             kableExtra::kbl(format = "latex",
                             booktabs = TRUE,
                             longtable = TRUE,
@@ -225,7 +237,8 @@ create_plots <- function(out_dir) {
                       VIEW_DATE < max_date,
                       xy_id %in% subareas_prodes_xyids) %>%
         dplyr::arrange(xy_id, VIEW_DATE) %>%
-        dplyr::select(CLASSNAME, xy_id, data_source, subarea_ha) %>%
+        dplyr::select(subarea_ha, CLASSNAME, xy_id,
+                      n_warnings, warning_pos) %>%
         dplyr::group_by(xy_id) %>%
         dplyr::mutate(n_warnings = dplyr::n(),
                       warning_pos = dplyr::row_number()) %>%
@@ -242,7 +255,11 @@ create_plots <- function(out_dir) {
             "HIDROGRAFIA" ~ "P_hidrografia",
             c("NAO_FLORESTA", "NAO_FLORESTA2") ~  "P_nao_floresta",
             "NUVEM_2021" ~ "P_nuvem_2021",
-            .default = CLASSNAME)) %>%
+            .default = CLASSNAME),
+                      CLASSNAME = stringr::str_replace_all(CLASSNAME,
+                                                           pattern = "_",
+                                                           replacement = " "),
+                      CLASSNAME = stringr::str_to_sentence(CLASSNAME)) %>%
         data.table::as.data.table()
 
     # Create latex tables.
@@ -255,6 +272,11 @@ create_plots <- function(out_dir) {
     for (i in seq_along(table_ls)) {
         table_ls %>%
             magrittr::extract2(i) %>%
+            dplyr::select(-min_area, -max_area, -mean_area,
+                          -median_area, -sd_area ) %>%
+            dplyr::arrange(dplyr::desc(area_ha)) %>%
+            dplyr::slice(1:10) %>%
+            janitor::adorn_totals() %>%
             kableExtra::kbl(format = "latex",
                             booktabs = TRUE,
                             longtable = TRUE,
@@ -296,45 +318,7 @@ create_plots <- function(out_dir) {
     rm(plot_tb)
     rm(subareas_prodes_xyids)
 
+    invisible(out_dir)
 }
 
-
-suspicious_trajectories <- function(out_dir) {
-    CLASSNAME <- data_source <- traj_position <- VIEW_DATE <- xy_id <- NULL
-    year <- NULL
-
-    start_prodes_def_file <- file.path(out_dir, "traj_starts_prodes_def.shp")
-    end_prodes_for_file   <- file.path(out_dir, "traj_ends_prodes_for.shp")
-
-    subarea_flat_sf <-
-        treesburnareas::subarea_sf %>%
-        treesburnareas::get_flat_subarea()
-
-   # Trajectory starts with PRODES deforestation.
-   treesburnareas::subarea_dt %>%
-        dplyr::group_by(xy_id) %>%
-        dplyr::arrange(VIEW_DATE) %>%
-        dplyr::first() %>%
-        dplyr::ungroup() %>%
-        dplyr::filter(data_source == "PRODES",
-                      stringr::str_starts(CLASSNAME, pattern = "d")) %>%
-        dplyr::select(CLASSNAME, VIEW_DATE, xy_id, traj_position, year) %>%
-        merge(subarea_flat_sf, .,
-              by = "xy_id") %>%
-        sf::write_sf(start_prodes_def_file)
-
-    # Trajectory ends with PRODES forest.
-   treesburnareas::subarea_dt %>%
-        dplyr::group_by(xy_id) %>%
-        dplyr::arrange(dplyr::desc(VIEW_DATE)) %>%
-        dplyr::first() %>%
-        dplyr::ungroup() %>%
-        dplyr::filter(data_source == "PRODES",
-                      stringr::str_starts(CLASSNAME,
-                                          pattern = "FOREST_2021")) %>%
-        dplyr::select(CLASSNAME, VIEW_DATE, xy_id, traj_position, year) %>%
-        merge(subarea_flat_sf, .,
-              by = "xy_id") %>%
-        sf::write_sf(end_prodes_for_file)
-}
 
