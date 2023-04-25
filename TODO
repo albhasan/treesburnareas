@@ -1,21 +1,23 @@
 # TODO:
-# - Create new trajectory figures using only DETER data.
-# - Create trajectory figures but only of those trajectories that become
-#   deforestation in PRODES.
-# - Cross data with MODIS Aqua' focos de calor. Ask Guilherme.
-# - Proposal:
-#   Desmatamento = solo exposto, desmatamento com vegetacao, e mineracao.
-#   Corte selectivo = ordenado e desordenado.
-#   Degradacao = degradacao.
-#   Cicatriz de queimada = cicatriz de queimada.
-#
-# - Run Sankey by state.
+# - Take note of the areas leaving after each filter.
+# - Create "clean trajectories":
+#   - Filter trajectories to leave only one event per year, prioritizing 
+#   deforestation coming either from DETER or PRODES.
+#   - Trajectories must end with deforestation (PRODES or DETER) a remove 
+#   posterior events.
+#   - Filter out trajectories that start with PRODES deforestation.
+#   - Filter out PRODES residual.
+#   - Filter out mining areas.
+# - Download again hot spot data (ask Guilherme for help).
+# - Try to specify the degradation type (get time series of subareas' centroids 
+# and analyze).
+# - If an event has hot spots, assume fire scar.
+# - Join heat spots to know if a farmer burn the same area many times or if 
+# DETER is counting the same burn in different warnings.
 # - Download SHP fire calendar from ZENODO by Nathalia Carvalho.
-# - Download  GWIS (ask Guilherme).
-# - Compute table with areas by trajectory
 # - Create map and add to slides.
-# - Convert trajectories back to shapefile.
 # - Select some weird trajectories and add them to the slides.
+# - Run Sankey by state.
 #
 # DONE:
 # - Time to PRODES
@@ -27,3 +29,15 @@
 #   squares.
 # - Update to GRASS geopackage. Use the data from 
 #   ~/Documents/data/deter/amazonia_legal/deter_grass.gpkg
+# - Create new trajectory figures using only DETER data.
+# - Create trajectory figures but only of those trajectories that become
+#   deforestation in PRODES.
+# - Compute table with areas by trajectory
+# - Convert trajectories back to shapefile.
+# - Proposal:
+#   Desmatamento = solo exposto, desmatamento com vegetacao, e mineracao.
+#   Corte selectivo = ordenado e desordenado.
+#   Degradacao = degradacao.
+#   Cicatriz de queimada = cicatriz de queimada.
+# - Download  GWIS (ask Guilherme).
+# - Cross data with MODIS Aqua' focos de calor. Ask Guilherme.
