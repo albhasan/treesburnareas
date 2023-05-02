@@ -55,6 +55,13 @@ create_plots <- function(out_dir) {
     stopifnot("Directory for storing figures not found!" = dir.exists(out_fig))
     stopifnot("Directory for storing tables not found!" = dir.exists(out_tab))
 
+    # NOTE: There shouldn't be DETER warnings before 2016-08-01, but there
+    #       should be PRODES'.
+    stopifnot("DETER warnigs should start at 2016-08-01" =
+        sum(treesburnareas::subarea_dt[data_source == "DETER",
+        VIEW_DATE < as.Date("2016-08-01")]) == 0)
+
+
 
     #---- Treemap: DETER warning area by state, year, warning type and area----
 
@@ -103,6 +110,42 @@ create_plots <- function(out_dir) {
                              "plot_deter_subarea_by_nwarnings.png"),
         height = height, width = width, units = units
     )
+
+
+    #---- Histogram DETER area by class ----
+
+    plot_area_by_class <-
+        treesburnareas::subarea_dt %>%
+        dplyr::filter(data_source == "DETER",
+                      in_prodes == TRUE,
+                      VIEW_DATE < max_date) %>%
+        get_plot_area_by_class()
+    ggplot2::ggsave(
+        plot = plot_area_by_class,
+        filename = file.path(out_fig,
+                             "plot_deter_area_by_class.png"),
+        height = height, width = width, units = units
+    )
+
+
+    #---- Histogram DETER area by class & state ----
+
+    plot_area_by_class_state <-
+        treesburnareas::subarea_dt %>%
+        dplyr::filter(data_source == "DETER",
+                      in_prodes == TRUE,
+                      VIEW_DATE < max_date) %>%
+        get_plot_area_by_class_state()
+    ggplot2::ggsave(
+        plot = plot_area_by_class_state,
+        filename = file.path(out_fig,
+                             "plot_deter_area_by_class_state.png"),
+        height = height, width = width, units = units
+    )
+
+
+    #---- Distribution of area of warning areas ----
+    # TODO: This figure requires the ID of the original DETER warning.
 
 
     #---- Histogram DETER subareas by number of warnings by state ----
@@ -173,8 +216,7 @@ create_plots <- function(out_dir) {
             magrittr::extract2(i) %>%
             dplyr::select(-min_area, -max_area, -mean_area,
                           -median_area, -sd_area ) %>%
-            dplyr::arrange(dplyr::desc(area_ha)) %>%
-            dplyr::slice(1:10) %>%
+            dplyr::slice_max(order_by = area_ha, n = 10) %>%
             janitor::adorn_totals() %>%
             kableExtra::kbl(format = "latex",
                             booktabs = TRUE,
@@ -237,8 +279,7 @@ create_plots <- function(out_dir) {
                       VIEW_DATE < max_date,
                       xy_id %in% subareas_prodes_xyids) %>%
         dplyr::arrange(xy_id, VIEW_DATE) %>%
-        dplyr::select(subarea_ha, CLASSNAME, xy_id,
-                      n_warnings, warning_pos) %>%
+        dplyr::select(subarea_ha, CLASSNAME, xy_id, VIEW_DATE, data_source) %>%
         dplyr::group_by(xy_id) %>%
         dplyr::mutate(n_warnings = dplyr::n(),
                       warning_pos = dplyr::row_number()) %>%
@@ -262,10 +303,61 @@ create_plots <- function(out_dir) {
                       CLASSNAME = stringr::str_to_sentence(CLASSNAME)) %>%
         data.table::as.data.table()
 
-    # Create latex tables.
+    # Compute the proximity (in time) of PRODES and DETER classes.
+    plot_tb %>%
+        dplyr::arrange(xy_id, VIEW_DATE) %>%
+        dplyr::group_by(xy_id) %>%
+        dplyr::mutate(prev_class = dplyr::lag(CLASSNAME),
+                      next_class = dplyr::lead(CLASSNAME),
+                      prev_date = dplyr::lag(VIEW_DATE),
+                      next_date = dplyr::lead(VIEW_DATE)) %>%
+        dplyr::ungroup() %>%
+        dplyr::filter(n_warnings > 1, data_source == "PRODES") %>%
+        dplyr::mutate(
+            prev_date = tidyr::replace_na(prev_date, as.Date(-Inf)),
+            next_date = tidyr::replace_na(next_date, as.Date(Inf)),
+            closest_class = dplyr::if_else(
+                abs(VIEW_DATE - prev_date) <= abs(VIEW_DATE - next_date),
+                prev_class,
+                next_class),
+            closest_date = dplyr::if_else(
+                abs(VIEW_DATE - prev_date) <= abs(VIEW_DATE - next_date),
+                prev_date,
+                next_date)
+            ) %>%
+        dplyr::select(-n_warnings, -data_source, -prev_class,
+                      -next_class, -prev_date, -next_date) %>%
+        dplyr::mutate(diff_days = difftime(VIEW_DATE, closest_date,
+                                           units = "days")) %>%
+        dplyr::group_by(CLASSNAME, closest_class) %>%
+        dplyr::summarize(total_ha = sum(subarea_ha),
+                         n = dplyr::n(),
+                         median_days = median(as.double(diff_days)),
+                         median_days_abs = median(abs(as.double(diff_days))),
+                         sd_days = sd(as.double(diff_days)),
+                         sd_abs = sd(abs(as.double(diff_days)))) %>%
+        dplyr::ungroup() %>%
+        dplyr::slice_max(order_by = total_ha, n = 10) %>%
+        kableExtra::kbl(format = "latex",
+                        booktabs = TRUE,
+                        longtable = TRUE,
+                        linesep = "",
+                        digits = 1,
+                        label = "tab:prodes_deter_time_proximity",
+                        caption = NA) %>%
+        kableExtra::kable_styling(full_width = TRUE,
+                                  font_size = 7,
+                                  latex_options = "striped") %>%
+        readr::write_file(
+            file = file.path(out_tab, "tb_prodes_deter_time_proximity.tex"),
+            append = FALSE
+        )
+
+    # Create trajectory top-10 tables (latex).
     table_ls <-
         plot_tb %>%
         dplyr::filter(n_warnings > 1) %>%
+        dplyr::select(-VIEW_DATE, data_source) %>%
         dplyr::group_by(n_warnings) %>%
         dplyr::group_split(.keep = TRUE) %>%
         purrr::map(get_trajectory_stats)
@@ -274,8 +366,7 @@ create_plots <- function(out_dir) {
             magrittr::extract2(i) %>%
             dplyr::select(-min_area, -max_area, -mean_area,
                           -median_area, -sd_area ) %>%
-            dplyr::arrange(dplyr::desc(area_ha)) %>%
-            dplyr::slice(1:10) %>%
+            dplyr::slice_max(order_by = area_ha, n = 10) %>%
             janitor::adorn_totals() %>%
             kableExtra::kbl(format = "latex",
                             booktabs = TRUE,
@@ -301,6 +392,7 @@ create_plots <- function(out_dir) {
     plot_ls <-
         plot_tb %>%
         dplyr::filter(n_warnings > 1) %>%
+        dplyr::select(-VIEW_DATE, data_source) %>%
         dplyr::group_by(n_warnings) %>%
         dplyr::group_split(.keep = TRUE) %>%
         purrr::map(get_plot_sankey)
@@ -318,7 +410,12 @@ create_plots <- function(out_dir) {
     rm(plot_tb)
     rm(subareas_prodes_xyids)
 
+
+
+
+    #---- End ----
     invisible(out_dir)
+
 }
 
 
