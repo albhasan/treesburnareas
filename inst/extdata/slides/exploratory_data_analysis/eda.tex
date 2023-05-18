@@ -86,6 +86,11 @@ Brazilian Amazon}
     \end{figure}
 \end{frame}
 
+% \begin{frame}[allowframebreaks]
+%     \frametitle{DETER warnings}
+%     \input{./tables/tb_deter_area_by_state_pyear_type.tex}
+% \end{frame}
+
 \begin{frame}
     \frametitle{DETER warnings by class}
     \begin{figure}[h]
@@ -223,7 +228,7 @@ Brazilian Amazon}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
-    \frametitle{DETER - Top 10 trajectories (2 warnings)}
+    \frametitle{DETER - Top 5 trajectories (2 warnings)}
     \input{./tables/tb_deter_subarea_trajectory_2.tex}
 \end{frame}
 
@@ -238,7 +243,7 @@ Brazilian Amazon}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
-    \frametitle{DETER - Top 10 trajectories (3 warnings)}
+    \frametitle{DETER - Top 5 trajectories (3 warnings)}
     \input{./tables/tb_deter_subarea_trajectory_3.tex}
 \end{frame}
 
@@ -253,7 +258,7 @@ Brazilian Amazon}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
-    \frametitle{DETER - Top 10 trajectories (4 warnings)}
+    \frametitle{DETER - Top 5 trajectories (4 warnings)}
     \input{./tables/tb_deter_subarea_trajectory_4.tex}
 \end{frame}
 
@@ -268,8 +273,8 @@ Brazilian Amazon}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
-    \frametitle{DETER - Top 10 trajectories (5 warnings)}
-    \input{./tables/tb_deter_subarea_trajectory_4.tex}
+    \frametitle{DETER - Top 5 trajectories (5 warnings)}
+    \input{./tables/tb_deter_subarea_trajectory_5.tex}
 \end{frame}
 
 
@@ -277,7 +282,7 @@ Brazilian Amazon}
 \subsection{Trajectories (DETER \& PRODES)} 
 
 \begin{frame}
-    \frametitle{DETER \& PRODES - Top 10 trajectories (2 warnings)}
+    \frametitle{DETER \& PRODES subareas (2 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
         {./figures/plot_deter_prodes_subarea_trajectory_2.png}
@@ -287,7 +292,7 @@ Brazilian Amazon}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
-    \frametitle{DETER \& PRODES - Top 10 trajectories (2 warnings)}
+    \frametitle{DETER \& PRODES - Top 5 trajectories (2 warnings)}
     \input{./tables/tb_deter_prodes_subarea_trajectory_2.tex}
 \end{frame}
 
@@ -302,7 +307,7 @@ Brazilian Amazon}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
-    \frametitle{DETER \& PRODES - Top 10 trajectories (3 warnings)}
+    \frametitle{DETER \& PRODES - Top 5 trajectories (3 warnings)}
     \input{./tables/tb_deter_prodes_subarea_trajectory_3.tex}
 \end{frame}
 
@@ -317,7 +322,7 @@ Brazilian Amazon}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
-    \frametitle{DETER \& PRODES - Top 10 trajectories (4 warnings)}
+    \frametitle{DETER \& PRODES - Top 5 trajectories (4 warnings)}
     \input{./tables/tb_deter_prodes_subarea_trajectory_4.tex}
 \end{frame}
 
@@ -332,7 +337,7 @@ Brazilian Amazon}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
-    \frametitle{DETER \& PRODES - Top 10 trajectories (5 warnings)}
+    \frametitle{DETER \& PRODES - Top 5 trajectories (5 warnings)}
     \input{./tables/tb_deter_prodes_subarea_trajectory_5.tex}
 \end{frame}
 
@@ -347,15 +352,120 @@ Brazilian Amazon}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
-    \frametitle{DETER \& PRODES - Top 10 trajectories (6 warnings)}
+    \frametitle{DETER \& PRODES - Top 5 trajectories (6 warnings)}
     \input{./tables/tb_deter_prodes_subarea_trajectory_6.tex}
 \end{frame}
 
 \begin{frame}[allowframebreaks]
-    \frametitle{DETER \& PRODES - Top 10 proximity in time}
+    \frametitle{DETER \& PRODES - proximity in time}
+    \begin{itemize}
+        \item There is a potential DETER-PRODES overlap in our analysis.
+        \item DETER warnings and PRODES deforestation polygons could refer to
+            the same event.
+        \item The next slide reports the DETER warnings closest in 
+            time to PRODES polygons.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[allowframebreaks]
+    \frametitle{DETER \& PRODES - Top 5 proximity in time}
     \input{./tables/tb_prodes_deter_time_proximity.tex}
 \end{frame}
 
+
+
+\subsection{Analysis 1}
+
+\begin{frame}
+    \frametitle{Analysis 1}
+    \begin{itemize}
+        \item Trajectories have one event each PRODES year. There were 
+            70/517059 with more than one.
+        \item Trajectories with mining in them were excluded.
+        \item Trajectories end as soon as they reach deforestation.
+        \item Trajectories include at least one PRODES event.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Analysis 1 (2 warnings) }
+    \begin{figure}[h] 
+    \includegraphics[width=0.65\textwidth]{./figures/an1_plot_deter_prodes_subarea_trajectory_2.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Analysis 1 (3 warnings) }
+    \begin{figure}[h] 
+    \includegraphics[width=0.65\textwidth]{./figures/an1_plot_deter_prodes_subarea_trajectory_3.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Analysis 1 (4 warnings) }
+    \begin{figure}[h] 
+    \includegraphics[width=0.65\textwidth]{./figures/an1_plot_deter_prodes_subarea_trajectory_4.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Analysis 1 (5 warnings) }
+    \begin{figure}[h] 
+    \includegraphics[width=0.65\textwidth]{./figures/an1_plot_deter_prodes_subarea_trajectory_5.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Analysis 1 (6 warnings) }
+    \begin{figure}[h] 
+    \includegraphics[width=0.65\textwidth]{./figures/an1_plot_deter_prodes_subarea_trajectory_6.png}
+    \end{figure}
+\end{frame}
+
+
+\subsection{Analysis 2}
+
+\begin{frame}
+    \frametitle{Analysis 2}
+    \begin{itemize}
+        \item Same as Analysis 1, but only using DETER's burn scars.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Analysis 2 (2 warnings) }
+    \begin{figure}[h] 
+    \includegraphics[width=0.65\textwidth]{./figures/an2_plot_deter_prodes_subarea_trajectory_2.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Analysis 2 (3 warnings) }
+    \begin{figure}[h] 
+    \includegraphics[width=0.65\textwidth]{./figures/an2_plot_deter_prodes_subarea_trajectory_3.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Analysis 2 (4 warnings) }
+    \begin{figure}[h] 
+    \includegraphics[width=0.65\textwidth]{./figures/an2_plot_deter_prodes_subarea_trajectory_4.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Analysis 2 (5 warnings) }
+    \begin{figure}[h] 
+    \includegraphics[width=0.65\textwidth]{./figures/an2_plot_deter_prodes_subarea_trajectory_5.png}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Analysis 2 (6 warnings) }
+    \begin{figure}[h] 
+    \includegraphics[width=0.65\textwidth]{./figures/an2_plot_deter_prodes_subarea_trajectory_6.png}
+    \end{figure}
+\end{frame}
 
 
 
