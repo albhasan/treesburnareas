@@ -67,8 +67,6 @@ Brazilian Amazon}
         \item DETER is a GIS which produces a fast assessment of deforestation 
             and forest degradation in the Brazilian 
             Amazon~\cite{shimabukuro2006}.
-        \item DETER is an important tool for environmental protection and  
-            effective law enforcement.
         \item DETER employs Linear Mixture Models of CBERS imagery and human
             experts to deter and issue warnings of deforested (or degraded) 
             areas larger than 3 ha~\cite{dealmeida2022}.
@@ -110,7 +108,6 @@ Brazilian Amazon}
         \caption{Burn scars and clear cut are the most common warnings.}
     \end{figure}
 \end{frame}
-
 
 \begin{frame}
     \frametitle{DETER warnings and time}
@@ -282,6 +279,17 @@ Brazilian Amazon}
 \subsection{Trajectories (DETER \& PRODES)} 
 
 \begin{frame}
+    \frametitle{DETER \& PRODES}
+    \begin{itemize}
+        \item Add to the trajectories the PRODES class corresponding to each
+            DETER subarea.
+        \item The selected class corresponds to the mode of PRODES' pixels in
+            each DETER subarea.
+        \item Use PRODES' view date to sort trajectories.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
     \frametitle{DETER \& PRODES subareas (2 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
@@ -379,9 +387,9 @@ Brazilian Amazon}
 \begin{frame}
     \frametitle{Analysis 1}
     \begin{itemize}
-        \item Trajectories have one event each PRODES year. There were 
+        \item Trajectories have one event in each PRODES year. There were 
             70/517059 with more than one.
-        \item Trajectories with mining in them were excluded.
+        \item Trajectories related to mining were excluded.
         \item Trajectories end as soon as they reach deforestation.
         \item Trajectories include at least one PRODES event.
     \end{itemize}
