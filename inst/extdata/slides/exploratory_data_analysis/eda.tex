@@ -84,6 +84,7 @@ Brazilian Amazon}
     \end{figure}
 \end{frame}
 
+% NOTE: Too many rows in this table!
 % \begin{frame}[allowframebreaks]
 %     \frametitle{DETER warnings}
 %     \input{./tables/tb_deter_area_by_state_pyear_type.tex}
@@ -477,6 +478,28 @@ Brazilian Amazon}
 
 
 
+\section{Fire spots}
+
+\begin{frame}
+    \frametitle{Fire spots}
+    \begin{itemize}
+        \item We downloaded fire spots from INPE's \emph{Queimadas} project.
+        \item The data corresponds to VIIRS satellite (NPP-375 morning and 
+            afternoon).
+        \item More than 4 million points.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Current analysis venue}
+    \begin{itemize}
+        \item How to convert fires spots into fire events?
+        \item For example, ~\cite{andela2022} had the same problem.
+        \item DETER data contrains the problem's spatial domain.
+    \end{itemize}
+\end{frame}
+
+
 \section{Closing}
 
 \begin{frame}
@@ -499,7 +522,8 @@ Brazilian Amazon}
 
 \begin{frame}[allowframebreaks]
     \frametitle{References}
-    \bibliographystyle{amsalpha}
+    %\bibliographystyle{amsalpha}
+    \bibliographystyle{apalike}
     \bibliography{07_SBSR.bib}
 \end{frame}
 
