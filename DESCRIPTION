@@ -1,6 +1,6 @@
 Package: treesburnareas
 Title: Analysis of Fire Recurrence in the Amazon Forest
-Version: 0.0.0.9004
+Version: 0.0.0.9005
 Authors@R: 
     person("Alber", "Sanchez", , "alber.ipia@inpe.br", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-7966-2880"))
@@ -26,6 +26,7 @@ Imports:
     magrittr,
     purrr,
     readr,
+    rlang,
     scales,
     sf,
     stats,

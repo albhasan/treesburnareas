@@ -13,8 +13,8 @@ DETER_SHP="/home/alber/Documents/data/deter/amazonia_legal/deter_public.shp"
 GRASS_DATA="/home/alber/Documents/grassdata"
 
 # Path to results.
-OUT_DETER="/home/alber/Documents/data/deter/amazonia_legal/deter_public.gpkg"
-OUT_SUBAREAS="/home/alber/Documents/data/deter/amazonia_legal/deter_subareas.gpkg"
+OUT_DETER="/home/alber/Documents/data/treesburnedareas/deter_public_vis.gpkg"
+OUT_SUBAREAS="/home/alber/Documents/data/treesburnedareas/deter_subareas.gpkg"
 SUBAREAS_LAYER=deter_subareas
 
 
@@ -66,18 +66,22 @@ ogr2ogr ${OUT_DETER} ${DETER_SHP}
 
 #---- Import data to GRASS GIS ----
 
+# NOTE: It seems GRASS GIS is better at this than QGIS.
+
 # Create a GRASS location using DETER properties.
 grass -e -c ${DETER_SHP} ${GRASS_DATA}/deter
 
 # Import DETER data to GRASS GIS. GRASS cleans and intersects the polygons.
 # NOTE: The snap argument was taken from GRASS suggestion during the first 
 #       import. See the bottom of this file.
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.import input=${DETER_SHP} output=deter_public snap=1e-06
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.import input=${DETER_SHP} \
+    output=deter_public snap=1e-06
 
 
 #---- Export the results ----
 
-grass ${GRASS_DATA}/deter/PERMANENT --exec v.out.ogr -a input=deter_public type=area format=GPKG output=${OUT_SUBAREAS} output_layer=${SUBAREAS_LAYER}
+grass ${GRASS_DATA}/deter/PERMANENT --exec v.out.ogr -a input=deter_public \
+    type=area format=GPKG output=${OUT_SUBAREAS} output_layer=${SUBAREAS_LAYER}
 
 exit 0
 

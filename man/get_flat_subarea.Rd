@@ -2,7 +2,7 @@
 % Please edit documentation in R/subarea.R
 \name{get_flat_subarea}
 \alias{get_flat_subarea}
-\title{Return an flat subarea SF object.}
+\title{Return an flat subarea SF object}
 \usage{
 get_flat_subarea(subarea_sf)
 }

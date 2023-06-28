@@ -49,46 +49,86 @@ compute_prodes_year <- function(adate, start_month = "08", start_day = "01") {
 get_prodes_codes <- function() {
     # TODO: Move this to a configuration file.
     tibble::tribble(
-        ~prodes_code, ~class_tif_2021,   ~class_shp_2021, ~label_eng_2021,
-          7L,         "d2007 (mascara)", "d2007",         "Deforestation",
-          8L,         "d2008",           "d2008",         "Deforestation",
-          9L,         "d2009",           "d2009",         "Deforestation",
-         10L,         "d2010",           "d2010",         "Deforestation",
-         11L,         "d2011",           "d2011",         "Deforestation",
-         12L,         "d2012",           "d2012",         "Deforestation",
-         13L,         "d2013",           "d2013",         "Deforestation",
-         14L,         "d2014",           "d2014",         "Deforestation",
-         15L,         "d2015",           "d2015",         "Deforestation",
-         16L,         "d2016",           "d2016",         "Deforestation",
-         17L,         "d2017",           "d2017",         "Deforestation",
-         18L,         "d2018",           "d2018",         "Deforestation",
-         19L,         "d2019",           "d2019",         "Deforestation",
-         20L,         "d2020",           "d2020",         "Deforestation",
-         21L,         "d2021",           "d2021",         "Deforestation",
-        #
-         32L,         "Nuvem",           "NUVEM_2021",    "Cloud",
-        #
-         50L,         "r2010",           "r2010",         "Residual",
-         51L,         "r2011",           "r2011",         "Residual",
-         52L,         "r2012",           "r2012",         "Residual",
-         53L,         "r2013",           "r2013",         "Residual",
-         54L,         "r2014",           "r2014",         "Residual",
-         55L,         "r2015",           "r2015",         "Residual",
-         56L,         "r2016",           "r2016",         "Residual",
-         57L,         "r2017",           "r2017",         "Residual",
-         58L,         "r2018",           "r2018",         "Residual",
-         59L,         "r2019",           "r2019",         "Residual",
-         60L,         "r2020",           "r2020",         "Residual",
-         61L,         "r2021",           "r2021",         "Residual",
-        #
-         91L,         "Hidrografia",     "HIDROGRAFIA",   "Water",
-        #
-         100L,        "Floresta",        "FOREST_2021",   "forest",
-         101L,        "NaoFloresta",     "NAO_FLORESTA",  "No Forest",
-         102L,        NA,                "NAO_FLORESTA2", "No Forest"
+        ~prodes_code, ~common_name,      ~class_tif_2021,   ~class_shp_2021,
+          7L,         "Deforestation", "d2007 (mascara)", "d2007",
+          8L,         "Deforestation", "d2008",           "d2008",
+          9L,         "Deforestation", "d2009",           "d2009",
+         10L,         "Deforestation", "d2010",           "d2010",
+         11L,         "Deforestation", "d2011",           "d2011",
+         12L,         "Deforestation", "d2012",           "d2012",
+         13L,         "Deforestation", "d2013",           "d2013",
+         14L,         "Deforestation", "d2014",           "d2014",
+         15L,         "Deforestation", "d2015",           "d2015",
+         16L,         "Deforestation", "d2016",           "d2016",
+         17L,         "Deforestation", "d2017",           "d2017",
+         18L,         "Deforestation", "d2018",           "d2018",
+         19L,         "Deforestation", "d2019",           "d2019",
+         20L,         "Deforestation", "d2020",           "d2020",
+         21L,         "Deforestation", "d2021",           "d2021",
+         #
+         32L,         "Cloud",         "Nuvem",           "NUVEM_2021",
+         #
+         50L,         "Residual",      "r2010",           "r2010",
+         51L,         "Residual",      "r2011",           "r2011",
+         52L,         "Residual",      "r2012",           "r2012",
+         53L,         "Residual",      "r2013",           "r2013",
+         54L,         "Residual",      "r2014",           "r2014",
+         55L,         "Residual",      "r2015",           "r2015",
+         56L,         "Residual",      "r2016",           "r2016",
+         57L,         "Residual",      "r2017",           "r2017",
+         58L,         "Residual",      "r2018",           "r2018",
+         59L,         "Residual",      "r2019",           "r2019",
+         60L,         "Residual",      "r2020",           "r2020",
+         61L,         "Residual",      "r2021",           "r2021",
+         #
+         91L,         "Water",         "Hidrografia",     "HIDROGRAFIA",
+         #
+         100L,        "Forest",        "Floresta",        "FOREST_2021",
+         #
+         101L,        "No Forest",     "NaoFloresta",     "NAO_FLORESTA",
+         102L,        "No Forest",     NA,                "NAO_FLORESTA2"
     ) %>%
     return()
 }
+
+
+
+#' @title Prepare a vector with PRODES classes.
+#'
+#' @name get_prodes_names
+#'
+#' @description
+#' This function returns a named vector with PRODES common names and their
+#' corresponding classes from the raster and vector PRODES data. This vector
+#' is useful for recoding.
+#' @return An character.
+#' @export
+get_prodes_names <- function() {
+    prodes_code <- "prodes_code"
+    common_name <- "common_name"
+    label <- "class"
+    prodes_codes <- get_prodes_codes()
+    stopifnot("Columns not found in PRODES codes!" =
+              all(names(prodes_codes)[1:2] %in% c(prodes_code, common_name)))
+    stopifnot("At least 3 columns are needed!" = ncol(prodes_codes) > 2)
+    names_tb <- tibble::tibble()
+    for (i in 3:ncol(prodes_codes)) {
+        tmp_tb <- prodes_codes[, c(1:2, i)]
+        colnames(tmp_tb)[3] <- label
+        names_tb <- dplyr::bind_rows(names_tb, tmp_tb)
+    }
+    names_tb <-
+        names_tb %>%
+        tidyr::drop_na() %>%
+        dplyr::distinct(.data[[prodes_code]],
+                        .data[[common_name]],
+                        .data[[label]])
+    names_tb %>%
+        dplyr::pull(tidyselect::all_of(common_name)) %>%
+        magrittr::set_names(names_tb[[label]]) %>%
+        return()
+}
+
 
 
 #' @title Extract the PRODES codes from text file
@@ -103,22 +143,22 @@ get_prodes_codes <- function() {
 #' @return A tibble with two columns: code, and class.
 #' @export
 process_prodes_codes <- function(file_path) {
-    X2 <- X3 <- code <- NULL
     stopifnot("PRODES' code file not found!" = file.exists(file_path))
     file_path %>%
-    readr::read_delim(delim = "|",
-                      col_names = FALSE,
-                      col_select = c(2, 3),
-                      col_types = "ic",
-                      skip = 15,
-                      comment = "+---",
-                      trim_ws = TRUE) %>%
-    dplyr::rename(code = X2, class = X3) %>%
-    dplyr::mutate(class = stringr::str_replace_all(class,
-                                                   pattern = "\\.",
-                                                   replacement = " "),
-                  class = stringr::str_trim(class),
-                  code = as.integer(code)) %>%
-    return()
+        readr::read_delim(delim = "|",
+                          col_names = FALSE,
+                          col_select = c(2, 3),
+                          col_types = "ic",
+                          skip = 15,
+                          comment = "+---",
+                          trim_ws = TRUE) %>%
+        dplyr::rename(code = tidyselect::all_of("X2"),
+                      class = tidyselect::all_of("X3")) %>%
+        dplyr::mutate(class = stringr::str_replace_all(class,
+                                                       pattern = "\\.",
+                                                       replacement = " "),
+                      class = stringr::str_trim(.data[["class"]]),
+                      code = as.integer(.data[["code"]])) %>%
+        return()
 }
 

@@ -4,13 +4,15 @@
 \alias{get_plot_area_by_state_year_type}
 \title{Build a treemap using of DETER's deforestation warnings.}
 \usage{
-get_plot_area_by_state_year_type(subarea_dt)
+get_plot_area_by_state_year_type(subarea_dt, class_levels)
 }
 \arguments{
 \item{subarea_dt}{A data.table object hosted in this package.}
+
+\item{class_levels}{A character. Names used to recode DETER's CLASSNAME.}
 }
 \value{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{      A ggplot2 object.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{        A ggplot2 object.
 }\if{html}{\out{</div>}}
 }
 \description{

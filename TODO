@@ -1,23 +1,19 @@
 # TODO:
-# - Take note of the areas leaving after each filter.
-# - Create "clean trajectories":
-#   - Filter trajectories to leave only one event per year, prioritizing 
-#   deforestation coming either from DETER or PRODES.
-#   - Trajectories must end with deforestation (PRODES or DETER) a remove 
-#   posterior events.
-#   - Filter out trajectories that start with PRODES deforestation.
-#   - Filter out PRODES residual.
-#   - Filter out mining areas.
-# - Download again hot spot data (ask Guilherme for help).
+#
+# - Do Sankey again, only for burn scars.
+#
 # - Try to specify the degradation type (get time series of subareas' centroids 
-# and analyze).
-# - If an event has hot spots, assume fire scar.
+#   and analyze).
+#
 # - Join heat spots to know if a farmer burn the same area many times or if 
-# DETER is counting the same burn in different warnings.
+#
+# - DETER is counting the same burn in different warnings.
+# - Run Sankey by state.
+# - Download  GWIS (ask Guilherme).
+# - If an event has hot spots, assume fire scar.
 # - Download SHP fire calendar from ZENODO by Nathalia Carvalho.
 # - Create map and add to slides.
 # - Select some weird trajectories and add them to the slides.
-# - Run Sankey by state.
 #
 # DONE:
 # - Time to PRODES
@@ -39,5 +35,16 @@
 #   Corte selectivo = ordenado e desordenado.
 #   Degradacao = degradacao.
 #   Cicatriz de queimada = cicatriz de queimada.
-# - Download  GWIS (ask Guilherme).
+# - Create "clean trajectories":
+#   - Filter trajectories to leave only one event per year, prioritizing 
+#   deforestation coming either from DETER or PRODES.
+#   - Trajectories must end with deforestation (PRODES or DETER) a remove 
+#   posterior events.
+#   - Filter out trajectories that start with PRODES deforestation.
+#   - Filter out PRODES residual.
+#   - Filter out mining areas.
+#   - Do Sankey's figure again.
+# - Report areas.
+# - Take note of the areas remaining after each filter.
+# - Download again hot spot data (ask Guilherme for help).
 # - Cross data with MODIS Aqua' focos de calor. Ask Guilherme.

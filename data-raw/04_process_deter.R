@@ -3,7 +3,6 @@
 # PROCESS DETER TO PRODUCE THE DATA REQUIRED BY THE EDA'S FIGURES.
 ###############################################################################
 
-library(data.table)
 library(dplyr)
 library(ensurer)
 library(forcats)
@@ -11,6 +10,7 @@ library(ggplot2)
 library(ggsankey)
 library(magrittr)
 library(readr)
+library(sf)
 library(stringr)
 library(terra)
 library(tibble)
@@ -23,17 +23,20 @@ library(treesburnareas)
 
 #---- Configuration ----
 
+stopifnot("Old RDA files found!" =
+          length(list.files(path = "./data", pattern = "*.rda")) > 0)
+
 reuse_temporal_files <- FALSE
 
 # Inputs
 prodes_year     <- "2021"
-prodes_raster   <- "~/Documents/data/prodes/amazonia/prodes_raster.tif"
-prodes_viewdate <- "~/Documents/data/prodes/amazonia/prodes_viewdate.tif"
-deter_gpkg      <- "~/Documents/data/deter/amazonia_legal/deter_qgis.gpkg"
+prodes_raster   <- "/home/alber/Documents/data/treesburnedareas/prodes_raster.tif"
+prodes_viewdate <- "/home/alber/Documents/data/treesburnedareas/prodes_viewdate.tif"
+deter_gpkg      <- "/home/alber/Documents/data/treesburnedareas/deter_qgis.gpkg"
 deter_lyr       <- "deter_qgis"
 
 # Outputs
-tmp_dir <- "~/Documents/trees_lab/deter_warning_recurrence/img"
+tmp_dir <- "/home/alber/Documents/data/treesburnedareas/tmp"
 
 # Validation
 stopifnot("GeoPackage with DETER data not found! Use DETER scripts" =
@@ -67,10 +70,16 @@ prodes_codes <-
 
 #---- Load data ----
 
-# Keep the geometry separated form the data handle it as a data.table.
-subarea_sf <-
+# Keep the geometry separated from the data handle it as a data.table.
+sarea_sf <-
     deter_gpkg %>%
     sf::read_sf(layer = deter_lyr) %>%
+    dplyr::mutate(subarea_id = as.integer(subarea_id)) %>%
+    ensurer::ensure_that(as.character(sf::st_geometry_type(.,
+                                      by_geometry = FALSE)) == "POLYGON",
+                         err_desc = "Expected geometry type POLYGON") %>%
+    ensurer::ensure_that(nrow(.) == length(unique(.$subarea_id)),
+                         err_desc = "subarea_id isn't unique!") %>%
     dplyr::mutate(VIEW_DATE = lubridate::as_date(VIEW_DATE),
                   year = compute_prodes_year(VIEW_DATE)) %>%
     dplyr::filter(!is.na(xy_id),
@@ -79,26 +88,32 @@ subarea_sf <-
                   in_prodes == 1,
                   year <= as.integer(prodes_year)) %>%
     sf::st_cast(to = "POLYGON",
-                do_split = TRUE) %>%
+                do_split = FALSE) %>%
     dplyr::select(-x, -y) %>%
     dplyr::distinct(xy_id, VIEW_DATE, .keep_all = TRUE) %>%
-    dplyr::arrange(xy_id, VIEW_DATE)
+    dplyr::arrange(xy_id, VIEW_DATE) %>%
+    (function(x) {
+        stopifnot("Scrambled subarea ids found!" = test_centroids(x))
+        invisible(x)
+    })
 
-subarea_dt <-
-    subarea_sf %>%
-    sf::st_drop_geometry() %>%
-    data.table::setDT(key = c("subarea_id", "VIEW_DATE"))
+sarea_tb <-
+    sarea_sf %>%
+    sf::st_drop_geometry()
 
-subarea_sf <-
-    subarea_sf %>%
-    dplyr::select(subarea_id, xy_id)
+# NOTE: Using data.table could scramble the data in the sf object.
+sarea_sf %>%
+    (function(x) {
+        stopifnot("Scrambled subarea ids found!" = test_centroids(x))
+        invisible(x)
+    })
 
-stopifnot("Subarea missmatch!" = nrow(subarea_sf) == nrow(subarea_dt))
+stopifnot("Subarea missmatch!" = nrow(sarea_sf) == nrow(sarea_tb))
 stopifnot("Some subareas are missing subarea_id" =
-          length(unique(subarea_sf$subarea_id)) == nrow(subarea_sf))
+          length(unique(sarea_sf$subarea_id)) == nrow(sarea_sf))
 stopifnot("The subareas only have one trajectory step. Nothing more to do!" =
-          length(unique(subarea_sf$subarea_id)) >
-          length(unique(subarea_sf$xy_id)))
+          length(unique(sarea_sf$subarea_id)) >
+          length(unique(sarea_sf$xy_id)))
 
 rm(deter_lyr)
 rm(deter_gpkg)
@@ -106,9 +121,11 @@ rm(deter_gpkg)
 
 #---- Prepare data ----
 
-subarea_flat_sf <-
-    subarea_sf %>%
+sarea_flat_sf <-
+    sarea_sf %>%
     treesburnareas::get_flat_subarea()
+
+rm(sarea_sf)
 
 # NOTE: To save time, check if we already did this computation.
 subarea_prodes_file <- file.path(tmp_dir, "prodes_subarea.rds")
@@ -118,8 +135,7 @@ if (reuse_temporal_files && file.exists(subarea_prodes_file)) {
 } else {
     subarea_prodes <-
         terra::extract(x = terra::rast(prodes_raster),
-                       y = terra::vect(subarea_flat_sf),
-#TODO: Add the use of the mode to the slides!
+                       y = terra::vect(sarea_flat_sf),
                        fun = the_mode,
                        ID = FALSE,
                        weights = FALSE,
@@ -139,7 +155,7 @@ if (reuse_temporal_files && file.exists(subarea_prodes_date_file)) {
 } else {
     subarea_prodes_date <-
         terra::extract(x = terra::rast(prodes_viewdate),
-                       y = terra::vect(subarea_flat_sf),
+                       y = terra::vect(sarea_flat_sf),
                        fun = the_mode,
                        ID = FALSE,
                        weights = FALSE,
@@ -150,23 +166,23 @@ if (reuse_temporal_files && file.exists(subarea_prodes_date_file)) {
     saveRDS(subarea_prodes_date, file = subarea_prodes_date_file)
 }
 
-subarea_flat_sf <- cbind(subarea_flat_sf, subarea_prodes, subarea_prodes_date)
+sarea_flat_sf <- cbind(sarea_flat_sf, subarea_prodes, subarea_prodes_date)
 
 rm(subarea_prodes, subarea_prodes_date)
 rm(subarea_prodes_file, subarea_prodes_date_file)
 rm(prodes_raster, prodes_viewdate)
 
 subarea_prodes <-
-    subarea_flat_sf %>%
+    sarea_flat_sf %>%
     sf::st_drop_geometry() %>%
     tibble::as_tibble() %>%
     dplyr::mutate(prodes_date = as.Date(prodes_date, origin = "1970-01-01"),
                   prodes_code = as.integer(prodes_code),
                   prodes_name = dplyr::recode(prodes_code,
-                                              !!!prodes_classes,
+                                              !!!prodes_codes,
                                               .default = NA_character_,
                                               .missing = NA_character_)) %>%
-    #dplyr::select(-prodes_code) %>%
+    dplyr::select(-prodes_code) %>%
     dplyr::rename(CLASSNAME = prodes_name,
                   VIEW_DATE = prodes_date) %>%
     dplyr::mutate(data_source = "PRODES") %>%
@@ -179,14 +195,39 @@ stopifnot("Unique xy_ids expected" =
 
 #---- Join subarea_prodes to DETER subareas ----
 
-subarea_dt <-
-    subarea_dt %>%
+sarea_tb <-
+    sarea_tb %>%
     dplyr::mutate(data_source = "DETER") %>%
-    dplyr::bind_rows(subarea_prodes) %>%
-    data.table::setDT(key = "xy_id")
+    dplyr::bind_rows(subarea_prodes)
 
 rm(subarea_prodes)
 
+
+#---- Make sure the columns are filled for DETER & PRODES ----
+
+sarea_tb <-
+    sarea_tb %>%
+    dplyr::select(CLASSNAME, QUADRANT, PATH_ROW, VIEW_DATE, SENSOR, SATELLITE,
+                  AREAUCKM, UC, AREAMUNKM, MUNICIPALI, GEOCODIBGE, UF,
+                  xy_id, subarea_ha, in_prodes, year, data_source) %>%
+    dplyr::mutate(year = treesburnareas::compute_prodes_year(VIEW_DATE))
+
+sarea_tb %>%
+    dplyr::summarise(dplyr::across(dplyr::everything(), ~ sum(is.na(.))))
+
+stopifnot("Number of VIEW_DATES should match number of PRODES years" =
+    length(unique(colSums(is.na(sarea_tb[, c("VIEW_DATE", "year")])))) == 1)
+
+stopifnot("Scrambled subarea ids found!" = test_centroids(subarea_sf))
+
+subarea_sf <- sarea_flat_sf
+subarea_tb <- sarea_tb
+rm(sarea_flat_sf)
+rm(sarea_tb)
+
+
+#---- Save ----
+
 # Save data to package.
-usethis::use_data(subarea_dt, subarea_sf)
+usethis::use_data(subarea_tb, subarea_sf, overwrite = TRUE)
 

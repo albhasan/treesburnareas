@@ -20,7 +20,7 @@ library(terra)
 
 #---- Set up ----
 
-out_directory <- "/home/alber/Documents/data/prodes/amazonia"
+out_directory <- "/home/alber/Documents/data/treesburnedareas"
 stopifnot(dir.exists(out_directory))
 
 prodes_year <- "2021"
@@ -51,6 +51,10 @@ stopifnot("The PRODES year doesn't match the PRODES tif" =
 stopifnot("The PRODES year doesn't match the PRODES forest shp" =
           all(stringr::str_detect(basename(fores_shp),
                                   pattern = prodes_year)))
+
+stopifnot("Ouput file already exists!" = !(file.exists(prodes_raster)))
+stopifnot("Ouput file already exists!" = !(file.exists(prodes_viewdate)))
+
 
 
 #---- Rasterize PRODES ----

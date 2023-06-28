@@ -2,15 +2,15 @@
 % Please edit documentation in R/plot.R
 \name{get_plot_sankey}
 \alias{get_plot_sankey}
-\title{Build a Sankey diagram of DETER warnings.}
+\title{Build a Sankey diagram of the given subareas}
 \usage{
 get_plot_sankey(data_tb)
 }
 \arguments{
-\item{data_tb}{A data.table object specifically prepared for this function.}
+\item{data_tb}{A tibble.}
 }
 \value{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{       A ggplot2 object.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{   A ggplot2 object.
 }\if{html}{\out{</div>}}
 }
 \description{

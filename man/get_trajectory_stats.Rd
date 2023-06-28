@@ -7,7 +7,7 @@
 get_trajectory_stats(data_tb)
 }
 \arguments{
-\item{data_tb}{A tibble.}
+\item{data_tb}{A tibble with trajectory data.}
 }
 \value{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{   A tibble.

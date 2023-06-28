@@ -5,8 +5,7 @@
 \alias{subarea_dt}
 \title{Data Frame of the subareas of deforestation alerts from 2008 to 2021}
 \format{
-A data.table object with 1083335 rows and 23 variables:
-cat: Identifier inherited from processing in GRASS GIS,
+A data.table object with 1085482 rows and 17 variables:
 CLASSNAME: Name of warning or deforestation,
 QUADRANT: Out of use. CBERS AWFI quadrant,
 PATH_ROW: Path and row of the used satellite images,
@@ -19,15 +18,11 @@ AREAMUNKM: Warning area intersecting a municipality,
 MUNICIPALI:Name of municipality intersecting a warning,
 GEOCODIBGE: IBGE's code for the municipality,
 UF: Brazilian state name,
-subarea_id: ID of the subarea. It varies along time,
 xy_id: Subarea ID based on its centroid coordinates,
 subarea_ha: Subarea extent in hectares,
-fid_2: Out of use. Feature ID of PRODES mask assigned by QGIS,
-DN: Out of use. Attribute name of PRODES mask,
 in_prodes: Does the subarea intersect the PRODES mask,
 year: PRODES year,
 data_source: Source of the data; either DETER or PRODES,
-n_warnings_deter: Number of DETER warnings in a subarea,
 }
 \usage{
 data(subarea_dt)

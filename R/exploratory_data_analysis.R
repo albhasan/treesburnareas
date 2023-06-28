@@ -14,11 +14,12 @@
 #' @export
 create_plots <- function(out_dir) {
     #TODO: make  parameters out of subarea_sf & subarea_dt
-    CLASSNAME <- data_source <- diff_days <- in_prodes <- NULL
-    last_CLASSNAME <- n_warnings <- subarea_ha <- NULL
-    warning_pos <- VIEW_DATE <- xy_id <- NULL
-    area_ha <- max_area <- mean_area <- median_area <- min_area <- NULL
-    sd_area <- NULL
+    area_ha <- area_km2 <- CLASSNAME <- closest_class <- closest_date <- NULL
+    common_name <- data_source <- diff_days <- in_prodes <- NULL
+    last_CLASSNAME <- max_area <- mean_area <- median_area <- min_area <- NULL
+    n <- n_warnings <- next_class <- next_date <- prev_class <- NULL
+    prev_date <- sd_area <- subarea_ha <- subarea_step <- total_ha <- NULL
+    warning_pos <- UF <- VIEW_DATE <- xy_id <- year <- NULL
 
     stopifnot("Directory not found!" = dir.exists(out_dir))
 
@@ -65,42 +66,95 @@ create_plots <- function(out_dir) {
         VIEW_DATE < as.Date("2016-08-01")]) == 0)
 
 
+    #---- Column names ----
+
+    said_col <- "xy_id"         # Subarea ID column.
+    inprodes_col <- "in_prodes" # Does the subarea fall inside PRODES' mask?
+    area_col <- "area_ha"       # Area.
+    ntraj_col <- "n_traj"       # Number of trajectories.
+    source_col <- "data_source" # Does the data comes from DETER or PRODES?
+    date_col <- "VIEW_DATE"     # View date.
+
+
+    #---- Utilitary ----
+
+    # Add percentages column and totals row to tibble.
+    # @param data_tb  A tibble.
+    # @param top_rows An integer. Number of top rows to keep.
+    # @return         A tibble.
+    .adorn_table <- function(data_tb, top_rows) {
+        data_tb %>%
+            dplyr::arrange(dplyr::desc(.data[[area_col]])) %>%
+            dplyr::mutate(
+              p_area = 100 * .data[[area_col]] / sum(.data[[area_col]]),
+              p_traj = 100 * .data[[ntraj_col]] / sum(.data[[ntraj_col]])) %>%
+            janitor::adorn_totals(where = "row", fill = "-",
+                                  c(tidyselect::all_of(c(area_col,
+                                                         ntraj_col)))) %>%
+            (function(x) {
+                dplyr::bind_rows(
+                    dplyr::slice_head(x, n = top_rows),
+                    dplyr::slice_tail(x, n = 1)
+                )
+            }) %>%
+            return()
+    }
+
+    # Get the subarea ids of DETER subareas falling inside PRODES mask.
+    # @param data_tb A tibble.
+    # @return        A character.
+    .get_xyid_in_prodes <- function(data_tb) {
+        # treesburnareas::subarea_dt %>%
+        data_tb %>%
+            dplyr::filter(.data[[inprodes_col]] == TRUE) %>%
+            dplyr::pull(tidyselect::all_of(said_col)) %>%
+            unique() %>%
+            sort() %>%
+            return()
+    }
+
+
     #---- Preprocessing ----
 
-    xyid_in_prodes <-
-        treesburnareas::subarea_dt %>%
-        dplyr::filter(in_prodes == TRUE) %>%
-        dplyr::pull(xy_id) %>%
-        unique() %>%
-        sort()
-
-    # NOTE: Subareas (DETER & PRODES) that fall inside the PRODES mask and
-    #       happened before max_date.
+    # NOTE: Subareas (DETER & PRODES) that fall inside the PRODES mask,
+    #       happened before max_date, and have a minimum size.
     subareas_deter_prodes <-
         treesburnareas::subarea_dt %>%
-        # Fill in the area of the PRODES subareas.
-        dplyr::arrange(xy_id, VIEW_DATE) %>%
-        dplyr::group_by(xy_id) %>%
-        tidyr::fill(subarea_ha, .direction = "downup") %>%
+        dplyr::arrange(.data[[said_col]],
+                       .data[[date_col]]) %>%
+        # Fill in the missing areas of PRODES.
+        dplyr::group_by(.data[[said_col]]) %>%
+        tidyr::fill(tidyselect::all_of(area_col),
+                    .direction = "downup") %>%
         dplyr::ungroup() %>%
-        dplyr::filter(xy_id %in% xyid_in_prodes,
-                      VIEW_DATE < max_date,
-                      subarea_ha > min_subarea_ha)
-
-    rm(xyid_in_prodes)
-
+        # NOTE: Keep all of PRODES data by not using a min_date.
+        dplyr::filter(
+            .data[[said_col]] %in%
+                .get_xyid_in_prodes(treesburnareas::subarea_dt),
+            .data[[date_col]] < max_date,
+            .data[[area_col]] > min_subarea_ha
+        )
 
 
     #---- Treemap: DETER warning area by state, year, warning type and area----
 
     #NOTE: This figure isn't about subareas, is about DETER only!
     treesburnareas::subarea_dt %>%
-        dplyr::filter(data_source == "DETER",
-                      in_prodes == TRUE,
-                      VIEW_DATE < max_date) %>%
+        dplyr::filter(.data[[source_col]] == "DETER",
+                      .data[[inprodes_col]] == TRUE,
+                      .data[[date_col]] < max_date) %>%
         # Save the figure.
         (function(x) {
-            ggplot2::ggsave(plot = get_plot_area_by_state_year_type(x),
+            ggplot2::ggsave(plot = get_plot_area_by_state_year_type(
+                x,
+                # class_levels = c("Mining", "Burn scar", "Clear cut",
+                #                  "Geometric slash", "Slash with veg.",
+                #                  "Untidy slash", "Selective cut",
+                #                  "Degradation")
+                class_levels = c("MINERACAO", "CICATRIZ_DE_QUEIMADA",
+                                 "DESMATAMENTO_CR", "CS_GEOMETRICO",
+                                 "DESMATAMENTO_VEG", "CS_DESORDENADO",
+                                 "CORTE_SELETIVO", "DEGRADACAO")),
                     filename = file.path(out_fig,
                                     "plot_deter_area_by_state_pyear_type.png"),
                     height = height, width = width, units = units)
@@ -230,13 +284,13 @@ create_plots <- function(out_dir) {
         dplyr::group_by(n_warnings) %>%
         dplyr::group_split(.keep = TRUE) %>%
         purrr::map(get_trajectory_stats)
+
     for (i in seq_along(table_ls)) {
         table_ls %>%
             magrittr::extract2(i) %>%
             dplyr::select(-min_area, -max_area, -mean_area,
-                          -median_area, -sd_area ) %>%
-            dplyr::slice_max(order_by = area_ha, n = top_rows) %>%
-            janitor::adorn_totals() %>%
+                          -median_area, -sd_area) %>%
+            .adorn_table(top_rows = top_rows) %>%
             kableExtra::kbl(format = "latex", booktabs = TRUE,
                             longtable = TRUE, linesep = "", digits = 1,
                             label = paste0("tab:traj_deter_", i + 1),
@@ -338,10 +392,11 @@ create_plots <- function(out_dir) {
         dplyr::group_by(CLASSNAME, closest_class) %>%
         dplyr::summarize(total_ha = sum(subarea_ha),
                          n = dplyr::n(),
-                         median_days = median(as.double(diff_days)),
-                         median_days_abs = median(abs(as.double(diff_days))),
-                         sd_days = sd(as.double(diff_days)),
-                         sd_abs = sd(abs(as.double(diff_days)))) %>%
+                         median_days = stats::median(as.double(diff_days)),
+                         median_days_abs =
+                             stats::median(abs(as.double(diff_days))),
+                         sd_days = stats::sd(as.double(diff_days)),
+                         sd_abs = stats::sd(abs(as.double(diff_days)))) %>%
         dplyr::ungroup() %>%
         dplyr::slice_max(order_by = total_ha, n = top_rows) %>%
         kableExtra::kbl(format = "latex",
@@ -372,8 +427,7 @@ create_plots <- function(out_dir) {
             magrittr::extract2(i) %>%
             dplyr::select(-min_area, -max_area, -mean_area,
                           -median_area, -sd_area) %>%
-            dplyr::slice_max(order_by = area_ha, n = top_rows) %>%
-            janitor::adorn_totals() %>%
+            .adorn_table(top_rows = top_rows) %>%
             kableExtra::kbl(format = "latex",
                             booktabs = TRUE,
                             longtable = TRUE,
@@ -457,8 +511,7 @@ create_plots <- function(out_dir) {
         subareas_deter_prodes %>%
         dplyr::mutate(common_name = dplyr::recode(CLASSNAME,
                                                   !!!prodes_common_names)) %>%
-        trim_trajectories(class_column = common_name,
-                          end_class = deforestation_classes) %>%
+        trim_trajectories(end_class = deforestation_classes) %>%
         dplyr::select(-common_name)
 
     # NOTE: Use only trajectories that include at least one PRODES event.
@@ -511,15 +564,40 @@ create_plots <- function(out_dir) {
             plot = plot_ls[[i]],
             filename = file.path(
                 out_fig,
-                paste0("an1_plot_deter_prodes_subarea_trajectory_", i + 1, ".png")
+                paste0("an1_plot_deter_prodes_subarea_trajectory_", i + 1,
+                       ".png")
             ),
             height = height, width = width, units = units
         )
     }
     rm(plot_ls)
-    rm(plot_tb)
+    #rm(plot_tb)
     rm(subareas_prodes_xyids)
     rm(i)
+
+###############################################################################
+# TODO: Create new sankey, including the actual year in the X axis.
+
+#NOTE: DETER & PRODES events are happenning during the same PRODES year!
+
+test <-
+    plot_tb %>%
+    dplyr::filter(n_warnings > 1,
+                  data_source == "DETER") %>%
+    dplyr::mutate(year = compute_prodes_year(VIEW_DATE)) %>%
+    dplyr::arrange(xy_id, VIEW_DATE)
+    # NOTE: repeat CLASSNAME to fill-in NA in each trajectory.
+    # dplyr::group_by(xy_id) %>%
+    # tidyr::fill(CLASSNAME, .direction = "downup") %>%
+    # dplyr::ungroup()
+test %>%
+    get_plot_sankey_year()
+
+
+
+###############################################################################
+
+
 
 
     #---- Analysis 2 ----
@@ -563,7 +641,8 @@ create_plots <- function(out_dir) {
             plot = plot_ls[[i]],
             filename = file.path(
                 out_fig,
-                paste0("an2_plot_deter_prodes_subarea_trajectory_", i + 1, ".png")
+                paste0("an2_plot_deter_prodes_subarea_trajectory_", i + 1,
+                       ".png")
             ),
             height = height, width = width, units = units
         )
