@@ -101,31 +101,35 @@ get_prodes_codes <- function() {
 #' This function returns a named vector with PRODES common names and their
 #' corresponding classes from the raster and vector PRODES data. This vector
 #' is useful for recoding.
-#' @return An character.
+#' @param code_col        A character. Name of the column with PRODES codes.
+#' @param common_name_col A character. Name of the column with common PRODES
+#' names.
+#' @param label_col       A character. Name of teh column with labels.
+#' @return A character.
 #' @export
-get_prodes_names <- function() {
-    prodes_code <- "prodes_code"
-    common_name <- "common_name"
-    label <- "class"
+get_prodes_names <- function(code_col = "prodes_code",
+                             common_name_col = "common_name",
+                             label_col = "class") {
+
     prodes_codes <- get_prodes_codes()
     stopifnot("Columns not found in PRODES codes!" =
-              all(names(prodes_codes)[1:2] %in% c(prodes_code, common_name)))
+              all(names(prodes_codes)[1:2] %in% c(code_col, common_name_col)))
     stopifnot("At least 3 columns are needed!" = ncol(prodes_codes) > 2)
     names_tb <- tibble::tibble()
     for (i in 3:ncol(prodes_codes)) {
         tmp_tb <- prodes_codes[, c(1:2, i)]
-        colnames(tmp_tb)[3] <- label
+        colnames(tmp_tb)[3] <- label_col
         names_tb <- dplyr::bind_rows(names_tb, tmp_tb)
     }
     names_tb <-
         names_tb %>%
         tidyr::drop_na() %>%
-        dplyr::distinct(.data[[prodes_code]],
-                        .data[[common_name]],
-                        .data[[label]])
+        dplyr::distinct(.data[[code_col]],
+                        .data[[common_name_col]],
+                        .data[[label_col]])
     names_tb %>%
-        dplyr::pull(tidyselect::all_of(common_name)) %>%
-        magrittr::set_names(names_tb[[label]]) %>%
+        dplyr::pull(tidyselect::all_of(common_name_col)) %>%
+        magrittr::set_names(names_tb[[label_col]]) %>%
         return()
 }
 

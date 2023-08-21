@@ -4,14 +4,14 @@
 \alias{report_suspicious_trajectories}
 \title{Find potential inconsistent trajectories}
 \usage{
-report_suspicious_trajectories(subarea_sf, subarea_dt, out_dir)
+report_suspicious_trajectories(subarea_sf, subarea_tb, out_dir)
 }
 \arguments{
 \item{subarea_sf}{An sf object with data about trajectories. See the data
 in this package.}
 
-\item{subarea_dt}{A data.table object with data about subtrajectories. See
-the data in this package.}
+\item{subarea_tb}{A tibble with data about subtrajectories. See the data in
+this package.}
 
 \item{out_dir}{A path to a directory.}
 }

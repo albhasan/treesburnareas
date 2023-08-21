@@ -4,13 +4,24 @@
 \alias{get_plot_sankey}
 \title{Build a Sankey diagram of the given subareas}
 \usage{
-get_plot_sankey(data_tb)
+get_plot_sankey(
+  data_tb,
+  area_col = "subarea_ha",
+  label_col = "CLASSNAME",
+  said_col = "xy_id"
+)
 }
 \arguments{
 \item{data_tb}{A tibble.}
+
+\item{area_col}{A character. Name of the column with area (ha).}
+
+\item{label_col}{A character. Name of the column with labels.}
+
+\item{said_col}{A character. Nma of the subarea ID column.}
 }
 \value{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{   A ggplot2 object.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{     A ggplot2 object.
 }\if{html}{\out{</div>}}
 }
 \description{

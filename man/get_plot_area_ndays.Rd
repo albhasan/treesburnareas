@@ -5,10 +5,30 @@
 \alias{get_plot_density_area_ndays}
 \title{Build a dot cloud figure using DETER deforestation warnings.}
 \usage{
-get_plot_density_area_ndays(subarea_dt)
+get_plot_density_area_ndays(
+  subarea_tb,
+  area_col = "subarea_ha",
+  date_col = "VIEW_DATE",
+  label_col = "CLASSNAME",
+  said_col = "xy_id",
+  state_col = "UF",
+  year_col = "year"
+)
 }
 \arguments{
-\item{subarea_dt}{A data.table object hosted in this package.}
+\item{subarea_tb}{A tibble hosted in this package.}
+
+\item{area_col}{A character. Name of the column with area (ha).}
+
+\item{date_col}{A character. Name of the view date column.}
+
+\item{label_col}{A character. Name of the column with labels.}
+
+\item{said_col}{A character. Nma of the subarea ID column.}
+
+\item{state_col}{A character. Name of the column with state.}
+
+\item{year_col}{A character. Name of the column with year (PRODES).}
 }
 \value{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{      A ggplot2 object.

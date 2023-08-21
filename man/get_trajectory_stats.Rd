@@ -4,10 +4,26 @@
 \alias{get_trajectory_stats}
 \title{Compute trajectory statistics}
 \usage{
-get_trajectory_stats(data_tb)
+get_trajectory_stats(
+  data_tb,
+  nwarn_col = "n_warnings",
+  nwarn_pos = "warning_pos",
+  label_col = "CLASSNAME",
+  area_col = "subarea_ha"
+)
 }
 \arguments{
 \item{data_tb}{A tibble with trajectory data.}
+
+\item{nwarn_col}{A character. The name of the column with the number of
+warnings.}
+
+\item{nwarn_pos}{A character. The name of the column with the position of
+an event in the trajectory of a subarea.}
+
+\item{label_col}{A character. The name of the column with labels.}
+
+\item{area_col}{A character. The name of the column with area.}
 }
 \value{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{   A tibble.

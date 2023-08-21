@@ -70,7 +70,7 @@ prodes_codes <-
 
 #---- Load data ----
 
-# Keep the geometry separated from the data handle it as a data.table.
+# Keep the geometry separated from the data.
 sarea_sf <-
     deter_gpkg %>%
     sf::read_sf(layer = deter_lyr) %>%

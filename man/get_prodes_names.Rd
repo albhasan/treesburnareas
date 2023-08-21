@@ -4,10 +4,22 @@
 \alias{get_prodes_names}
 \title{Prepare a vector with PRODES classes.}
 \usage{
-get_prodes_names()
+get_prodes_names(
+  code_col = "prodes_code",
+  common_name_col = "common_name",
+  label_col = "class"
+)
+}
+\arguments{
+\item{code_col}{A character. Name of the column with PRODES codes.}
+
+\item{common_name_col}{A character. Name of the column with common PRODES
+names.}
+
+\item{label_col}{A character. Name of teh column with labels.}
 }
 \value{
-An character.
+A character.
 }
 \description{
 This function returns a named vector with PRODES common names and their

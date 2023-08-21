@@ -76,8 +76,8 @@ is_dir_valid "$GRASS_DATA"
 is_dir_valid "$FIRE_DIR"
 is_dir_valid "$TMP_DIR"
 
-if [ -d "${GRASS_DATA}/deter" ]; then
-    echo "ERROR: GRASS GIS location 'deter' already exists in: ${GRASS_DATA}" 
+if [ -d "${GRASS_DATA}/${GRASS_DB}" ]; then
+    echo "ERROR: GRASS GIS location ${GRASS_DB} already exists in: ${GRASS_DATA}" 
     exit 1
 fi
 

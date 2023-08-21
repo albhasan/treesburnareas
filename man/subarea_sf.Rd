@@ -7,13 +7,13 @@
 \format{
 A tibble with 807069 rows and 2 variables:
 subarea_id: ID of the subarea,
-geom: geometry filed.
+geom: geometry field.
 }
 \usage{
 data(subarea_sf)
 }
 \description{
-An sf object containing the polygons corresponding to the data
-set subarea_dt.
+An sf object containing polygons corresponding to the dataset
+subarea_tb.
 }
 \keyword{datasets}

@@ -4,12 +4,24 @@
 \alias{trim_trajectories}
 \title{End the trajectories at certain class.}
 \usage{
-trim_trajectories(data_tb, end_class)
+trim_trajectories(
+  data_tb,
+  end_class,
+  said_col = "xy_id",
+  label_col = "CLASSNAME",
+  date_col = "VIEW_DATE"
+)
 }
 \arguments{
 \item{data_tb}{A tibble with trajectory data.}
 
 \item{end_class}{A character. Classes on which trajectories should end.}
+
+\item{said_col}{A character. Name of the column with}
+
+\item{label_col}{A character. Name of the column with labels.}
+
+\item{date_col}{A character. Name of the view date column.}
 }
 \value{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{     A tibble.

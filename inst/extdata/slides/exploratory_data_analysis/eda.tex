@@ -1,3 +1,8 @@
+% arara: pdflatex
+% arara: bibtex
+% arara: pdflatex
+
+
 \PassOptionsToPackage{table}{xcolor}
 \documentclass[aspectratio=169]{beamer}
 
@@ -216,6 +221,16 @@ Brazilian Amazon}
 \subsection{Trajectories (DETER)} 
 
 \begin{frame}
+    \frametitle{DETER subareas}
+    \begin{figure}[h] 
+        \includegraphics[width=0.65\linewidth]
+        {./figures/plot_deter_subarea_trajectory_year.png}
+        \caption{Tajectory of subareas along the years.}
+        \label{fig:deter_subarea_trajectory_year}
+    \end{figure}
+\end{frame}
+
+\begin{frame}
     \frametitle{DETER subareas (2 warnings)}
     \begin{figure}[h] 
         \includegraphics[width=0.65\linewidth]
@@ -424,13 +439,6 @@ Brazilian Amazon}
     \end{figure}
 \end{frame}
 
-\begin{frame}
-    \frametitle{Analysis 1 (6 warnings) }
-    \begin{figure}[h] 
-    \includegraphics[width=0.65\textwidth]{./figures/an1_plot_deter_prodes_subarea_trajectory_6.png}
-    \end{figure}
-\end{frame}
-
 
 \subsection{Analysis 2}
 
@@ -469,13 +477,6 @@ Brazilian Amazon}
     \end{figure}
 \end{frame}
 
-\begin{frame}
-    \frametitle{Analysis 2 (6 warnings) }
-    \begin{figure}[h] 
-    \includegraphics[width=0.65\textwidth]{./figures/an2_plot_deter_prodes_subarea_trajectory_6.png}
-    \end{figure}
-\end{frame}
-
 
 
 \section{Fire spots}
@@ -486,8 +487,24 @@ Brazilian Amazon}
         \item We downloaded fire spots from INPE's \emph{Queimadas} project.
         \item The data corresponds to VIIRS satellite (NPP-375 morning and 
             afternoon).
-        \item More than 4 million points.
     \end{itemize}
+\end{frame}
+
+% NOTE: The fire spots falling out of DETER aren't necessary degradation.
+% \begin{frame}
+%     \frametitle{What is the relationship between DETER and Fire Spots?}
+%     \begin{itemize}
+%         \item Number of fire spots: 4.5 million.
+%         \item Fire spots falling inside DETER subareas: 1 million (22\%).
+%     \end{itemize}
+% \end{frame}
+
+\begin{frame}
+    \frametitle{Fire spots by month}
+    \begin{figure}[h] 
+    \includegraphics[width=0.65\textwidth]
+        {./figures/plot_fire_spots_by_month.png}
+    \end{figure}
 \end{frame}
 
 \begin{frame}

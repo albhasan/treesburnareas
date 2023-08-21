@@ -4,13 +4,31 @@
 \alias{get_plot_days_first_to_last}
 \title{Build boxplots of the days from first to last DETER warning.}
 \usage{
-get_plot_days_first_to_last(subarea_dt, area_breaks)
+get_plot_days_first_to_last(
+  subarea_tb,
+  area_breaks,
+  area_col = "subarea_ha",
+  date_col = "VIEW_DATE",
+  label_col = "CLASSNAME",
+  said_col = "xy_id",
+  state_col = "UF"
+)
 }
 \arguments{
-\item{subarea_dt}{A data.table object hosted in this package.}
+\item{subarea_tb}{A tibble hosted in this package.}
 
 \item{area_breaks}{A named numeric vector with the breaks of subareas by
 size.}
+
+\item{area_col}{A character. Name of the column with area (ha).}
+
+\item{date_col}{A character. Name of the view date column.}
+
+\item{label_col}{A character. Name of the column with labels.}
+
+\item{said_col}{A character. Nma of the subarea ID column.}
+
+\item{state_col}{A character. Name of the column with state.}
 }
 \value{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{       A ggplot2 object.

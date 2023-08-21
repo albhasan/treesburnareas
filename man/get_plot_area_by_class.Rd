@@ -4,10 +4,21 @@
 \alias{get_plot_area_by_class}
 \title{Build a histogram using the classes of DETER.}
 \usage{
-get_plot_area_by_class(subarea_dt)
+get_plot_area_by_class(
+  subarea_tb,
+  area_col = "subarea_ha",
+  label_col = "CLASSNAME",
+  year_col = "year"
+)
 }
 \arguments{
-\item{subarea_dt}{A data.table object hosted in this package.}
+\item{subarea_tb}{A tibble hosted in this package.}
+
+\item{area_col}{A character. Name of the column with area (ha).}
+
+\item{label_col}{A character. Name of the column with labels.}
+
+\item{year_col}{A character. Name of the column with year (PRODES).}
 }
 \value{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{       A ggplot2 object.

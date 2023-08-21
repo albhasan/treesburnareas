@@ -11,7 +11,7 @@ test_centroids(data_sf, sample_n = 50, tol = 1e-05)
 
 \item{sample_n}{An integer.}
 
-\item{tol}{A numberic. The tolerance used for the comparison.}
+\item{tol}{A numeric. The tolerance used for the comparison.}
 }
 \value{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{    A logical.

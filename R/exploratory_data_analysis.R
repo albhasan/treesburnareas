@@ -6,25 +6,32 @@
 #' This function creates the figures and tables of the Exploratory Data
 #' Analysis of the Amazonia deforestation warnings issued by DETER.
 #' @param out_dir A path to a directory.
+#' @param subarea_tb A tibble with data about DETER subareas.
+#' @param fire_sf A sf object (point). Fire spots.
 #' @return out_dir (invisible).
 #' @examples
 #' \dontrun{
 #'     create_plots(out_dir = "~/Documents/report")
 #' }
 #' @export
-create_plots <- function(out_dir) {
-    #TODO: make  parameters out of subarea_sf & subarea_dt
+create_plots <- function(out_dir, subarea_tb, fire_sf) {
+
+    #TODO: make  parameters out of subarea_sf & subarea_tb
     area_ha <- area_km2 <- CLASSNAME <- closest_class <- closest_date <- NULL
     common_name <- data_source <- diff_days <- in_prodes <- NULL
     last_CLASSNAME <- max_area <- mean_area <- median_area <- min_area <- NULL
     n <- n_warnings <- next_class <- next_date <- prev_class <- NULL
-    prev_date <- sd_area <- subarea_ha <- subarea_step <- total_ha <- NULL
-    warning_pos <- UF <- VIEW_DATE <- xy_id <- year <- NULL
+    prev_date <- sd_area <- subarea_ha <- subarea_step <- subarea_tb <- NULL
+    total_ha <- warning_pos <- UF <- VIEW_DATE <- xy_id <- year <- NULL
 
     stopifnot("Directory not found!" = dir.exists(out_dir))
 
 
     #---- Setup ----
+
+    # TODO: Remove.
+    subarea_tb <- treesburnareas::subarea_tb
+    fire_sf    <- treesburnareas::fire_sf
 
     area_breaks <- c(
         "0"        = 0,
@@ -59,21 +66,31 @@ create_plots <- function(out_dir) {
     stopifnot("Directory for storing figures not found!" = dir.exists(out_fig))
     stopifnot("Directory for storing tables not found!" = dir.exists(out_tab))
 
-    # NOTE: There shouldn't be DETER warnings before 2016-08-01, but there
-    #       should be PRODES polygons before this date!
-    stopifnot("DETER warnigs should start at 2016-08-01" =
-        sum(treesburnareas::subarea_dt[data_source == "DETER",
-        VIEW_DATE < as.Date("2016-08-01")]) == 0)
-
 
     #---- Column names ----
 
-    said_col <- "xy_id"         # Subarea ID column.
-    inprodes_col <- "in_prodes" # Does the subarea fall inside PRODES' mask?
-    area_col <- "area_ha"       # Area.
-    ntraj_col <- "n_traj"       # Number of trajectories.
-    source_col <- "data_source" # Does the data comes from DETER or PRODES?
-    date_col <- "VIEW_DATE"     # View date.
+    area_col     <- "subarea_ha"  # Area.
+    date_col     <- "VIEW_DATE"   # View date.
+    inprodes_col <- "in_prodes"   # Does the subarea fall inside PRODES' mask?
+    label_col    <- "CLASSNAME"   # Label column.
+    month_col    <- "month"       # Month column.
+    ntraj_col    <- "n_traj"      # Number of trajectories.
+    nwarn_col    <- "n_warnings"  # Number of warnings by subarea.
+    nwarn_pos    <- "warning_pos" # Position of the warning in a subarea traj.
+    said_col     <- "xy_id"       # Subarea ID column.
+    source_col   <- "data_source" # Does the data comes from DETER or PRODES?
+    state_col    <- "UF"          # Name of the state.
+    year_col     <- "year"        # PRODES year.
+
+    #---- Validation ----
+
+    # NOTE: There shouldn't be DETER warnings before 2016-08-01, but there
+    #       should be PRODES polygons before this date!
+    stopifnot("DETER warnings are outside time interval" =
+        subarea_tb %>%
+        dplyr::filter(.data[[source_col]] == "DETER",
+                      .data[[date_col]] < as.Date("2016-08-01")) %>%
+        nrow() == 0)
 
 
     #---- Utilitary ----
@@ -104,7 +121,6 @@ create_plots <- function(out_dir) {
     # @param data_tb A tibble.
     # @return        A character.
     .get_xyid_in_prodes <- function(data_tb) {
-        # treesburnareas::subarea_dt %>%
         data_tb %>%
             dplyr::filter(.data[[inprodes_col]] == TRUE) %>%
             dplyr::pull(tidyselect::all_of(said_col)) %>%
@@ -114,32 +130,10 @@ create_plots <- function(out_dir) {
     }
 
 
-    #---- Preprocessing ----
-
-    # NOTE: Subareas (DETER & PRODES) that fall inside the PRODES mask,
-    #       happened before max_date, and have a minimum size.
-    subareas_deter_prodes <-
-        treesburnareas::subarea_dt %>%
-        dplyr::arrange(.data[[said_col]],
-                       .data[[date_col]]) %>%
-        # Fill in the missing areas of PRODES.
-        dplyr::group_by(.data[[said_col]]) %>%
-        tidyr::fill(tidyselect::all_of(area_col),
-                    .direction = "downup") %>%
-        dplyr::ungroup() %>%
-        # NOTE: Keep all of PRODES data by not using a min_date.
-        dplyr::filter(
-            .data[[said_col]] %in%
-                .get_xyid_in_prodes(treesburnareas::subarea_dt),
-            .data[[date_col]] < max_date,
-            .data[[area_col]] > min_subarea_ha
-        )
-
-
     #---- Treemap: DETER warning area by state, year, warning type and area----
 
     #NOTE: This figure isn't about subareas, is about DETER only!
-    treesburnareas::subarea_dt %>%
+    subarea_tb %>%
         dplyr::filter(.data[[source_col]] == "DETER",
                       .data[[inprodes_col]] == TRUE,
                       .data[[date_col]] < max_date) %>%
@@ -147,10 +141,9 @@ create_plots <- function(out_dir) {
         (function(x) {
             ggplot2::ggsave(plot = get_plot_area_by_state_year_type(
                 x,
-                # class_levels = c("Mining", "Burn scar", "Clear cut",
-                #                  "Geometric slash", "Slash with veg.",
-                #                  "Untidy slash", "Selective cut",
-                #                  "Degradation")
+                # NOTE: In this figure we need this specific order of classes.
+                #       The classes provided by get_deter_classes()$class don't
+                #       match the required order.
                 class_levels = c("MINERACAO", "CICATRIZ_DE_QUEIMADA",
                                  "DESMATAMENTO_CR", "CS_GEOMETRICO",
                                  "DESMATAMENTO_VEG", "CS_DESORDENADO",
@@ -161,12 +154,15 @@ create_plots <- function(out_dir) {
             return(x)
         }) %>%
         # Save the table.
-        dplyr::group_by(CLASSNAME, UF, year) %>%
-        dplyr::summarize(area_km2 = sum(subarea_ha) / 100) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(UF, year, CLASSNAME, area_km2) %>%
-        dplyr::arrange(UF, year, dplyr::desc(area_km2)) %>%
-        dplyr::mutate(year = as.character(year)) %>%
+        dplyr::summarize("{label_col}" := dplyr::first(.data[[label_col]]),
+                         "{state_col}" := dplyr::first(.data[[state_col]]),
+                         "{year_col}"  := dplyr::first(.data[[year_col]]),
+                         "area_km2" = sum(.data[[area_col]]) / 100,
+                         .by = tidyselect::all_of(c(state_col, year_col,
+                                                    label_col))) %>%
+        dplyr::arrange(.data[[state_col, year_col,
+                       dplyr::desc("area_km2")]]) %>%
+        dplyr::mutate(year = as.character({{year_col}})) %>%
         janitor::adorn_totals() %>%
         kableExtra::kbl(format = "latex",
                         booktabs = TRUE,
@@ -184,6 +180,28 @@ create_plots <- function(out_dir) {
         readr::write_file(file = file.path(out_tab,
                                      "tb_deter_area_by_state_pyear_type.tex"),
                           append = FALSE)
+
+
+    #---- Preprocessing ----
+
+    # NOTE: Subareas (DETER & PRODES) that fall inside the PRODES mask,
+    #       happened before max_date, and have a minimum size.
+    subareas_deter_prodes <-
+        subarea_tb %>%
+        dplyr::arrange(.data[[said_col]],
+                       .data[[date_col]]) %>%
+        # Fill in the missing areas of PRODES.
+        dplyr::group_by(.data[[said_col]]) %>%
+        tidyr::fill(tidyselect::all_of(area_col),
+                    .direction = "downup") %>%
+        dplyr::ungroup() %>%
+        # NOTE: Keep all of PRODES data by not using a min_date.
+        dplyr::filter(
+            .data[[said_col]] %in%
+                .get_xyid_in_prodes(subarea_tb),
+            .data[[date_col]] < max_date,
+            .data[[area_col]] > min_subarea_ha
+        )
 
 
 
@@ -234,6 +252,7 @@ create_plots <- function(out_dir) {
 
     #---- Distribution of area of warning areas ----
     # TODO: This figure requires the ID of the original DETER warning.
+        # check data scripts for deter ids.
 
 
 
@@ -266,30 +285,44 @@ create_plots <- function(out_dir) {
         dplyr::filter(data_source == "DETER") %>%
         dplyr::arrange(xy_id, VIEW_DATE) %>%
         dplyr::group_by(xy_id) %>%
-        dplyr::mutate(n_warnings = dplyr::n(),
+        dplyr::mutate("{nwarn_col}" := dplyr::n(), #n_warnings = dplyr::n(),
                       warning_pos = dplyr::row_number(),
                       CLASSNAME = stringr::str_replace_all(CLASSNAME,
                                                            pattern = "_",
                                                            replacement = " "),
                       CLASSNAME = stringr::str_to_sentence(CLASSNAME)) %>%
         dplyr::ungroup() %>%
-        dplyr::select(subarea_ha, CLASSNAME, xy_id,
-                      n_warnings, warning_pos) %>%
-        data.table::as.data.table()
+        dplyr::select(tidyselect::all_of(area_col, label_col, said_col,
+                                         nwarn_col, nwarn_pos, year_col))
 
-    # Create latex tables.
+    # Create Sankey figure (all years).
+    # oplan <- future::plan(multicore, workers = 2)
+    # on.exit(plan(oplan), add = TRUE)
+    sankey_year <-
+        plot_tb %>%
+        get_plot_sankey_year()
+    ggplot2::ggsave(plot = sankey_year,
+                    filename = file.path(out_fig,
+                             paste0("plot_deter_subarea_trajectory_year.png")),
+                    height = height, width = width, units = units)
+    rm(sankey_year)
+
+    # Create latex tables (by number of warnings).
     table_ls <-
         plot_tb %>%
+        dplyr::select(-year) %>%
         dplyr::filter(n_warnings > 1) %>%
         dplyr::group_by(n_warnings) %>%
         dplyr::group_split(.keep = TRUE) %>%
-        purrr::map(get_trajectory_stats)
+        furrr::future_map(get_trajectory_stats)
 
     for (i in seq_along(table_ls)) {
         table_ls %>%
             magrittr::extract2(i) %>%
+            # NOTE: We renamed area column. Check get_trajectory_stats.
             dplyr::select(-min_area, -max_area, -mean_area,
-                          -median_area, -sd_area) %>%
+                          -median_area, -sd_area,
+                          subarea_ha = area_ha) %>%
             .adorn_table(top_rows = top_rows) %>%
             kableExtra::kbl(format = "latex", booktabs = TRUE,
                             longtable = TRUE, linesep = "", digits = 1,
@@ -305,8 +338,7 @@ create_plots <- function(out_dir) {
                               append = FALSE)
     }
 
-    # Create Sankey figures.
-    # NOTE: I couldn't make ggsankey::geom_sankey use the variable subarea_ha.
+    # Create Sankey figure (by number of warnings).
     plot_ls <-
         plot_tb %>%
         dplyr::filter(n_warnings > 1) %>%
@@ -320,7 +352,6 @@ create_plots <- function(out_dir) {
                       paste0("plot_deter_subarea_trajectory_", i + 1, ".png")),
                         height = height, width = width, units = units)
     }
-
     rm(plot_ls)
     rm(table_ls)
     rm(plot_tb)
@@ -360,8 +391,7 @@ create_plots <- function(out_dir) {
                       CLASSNAME = stringr::str_replace_all(CLASSNAME,
                                                            pattern = "_",
                                                            replacement = " "),
-                      CLASSNAME = stringr::str_to_sentence(CLASSNAME)) %>%
-        data.table::as.data.table()
+                      CLASSNAME = stringr::str_to_sentence(CLASSNAME))
 
     # Compute the proximity (in time) of PRODES and DETER classes.
     plot_tb %>%
@@ -426,7 +456,9 @@ create_plots <- function(out_dir) {
         table_ls %>%
             magrittr::extract2(i) %>%
             dplyr::select(-min_area, -max_area, -mean_area,
-                          -median_area, -sd_area) %>%
+                          -median_area, -sd_area,
+            # NOTE: We renamed area column. Check get_trajectory_stats.
+                          subarea_ha = area_ha) %>%
             .adorn_table(top_rows = top_rows) %>%
             kableExtra::kbl(format = "latex",
                             booktabs = TRUE,
@@ -447,8 +479,10 @@ create_plots <- function(out_dir) {
                               append = FALSE)
     }
 
-    # Create Sankey figures.
-    # NOTE: I couldn't make ggsankey::geom_sankey use the variable subarea_ha.
+    # TODO: Create Sankey figure (all years).
+    # NOTE: ggsankey doesn't work well with large amounts of data.
+
+    # Create Sankey figure (by number of recurrent warnings).
     plot_ls <-
         plot_tb %>%
         dplyr::filter(n_warnings > 1) %>%
@@ -472,86 +506,90 @@ create_plots <- function(out_dir) {
     rm(i)
 
 
-
     #---- Analysis 1: Trajectories with DETER and PRODES ----
 
-    # NOTE: There are 70/517059 with more than one DETER-PRODES event in the
-    #       same PRODES year.
+    # NOTE: There are subareas with more than one DETER-PRODES event in the
+    #       same PRODES year (101587/530464).
     subareas_deter_prodes %>%
-        dplyr::arrange(xy_id, VIEW_DATE) %>%
-        dplyr::group_by(xy_id, year) %>%
+        dplyr::arrange(.data[[said_col]], .data[[date_col]]) %>%
+        dplyr::group_by(.data[[said_col]], .data[[year_col]]) %>%
         dplyr::summarize(n = dplyr::n()) %>%
         dplyr::ungroup() %>%
         dplyr::filter(n > 1) %>%
-        nrow()
+        nrow() %>%
+        magrittr::set_names(paste("INFO: subareas with more than one event in",
+                            "a PRODES year"))
 
-    # Allow only one event by PRODES year.
-    subareas_deter_prodes <-
-        subareas_deter_prodes %>%
-        dplyr::arrange(xy_id, VIEW_DATE) %>%
-        dplyr::group_by(xy_id, year) %>%
-        dplyr::slice_head(n = 1) %>%
-        dplyr::ungroup()
-
-    # Exclude trajectories involving mining.
-    xyid_mining <-
-        subareas_deter_prodes %>%
-        dplyr::filter(CLASSNAME == "MINERACAO") %>%
-        dplyr::pull(xy_id) %>%
-        unique()
-    subareas_deter_prodes <-
-        subareas_deter_prodes %>%
-        dplyr::filter(!(xy_id %in% xyid_mining))
-    rm(xyid_mining)
-
-    # End trajectories as soon as they reach deforestation
+    # Labeld considered as deforestation used to trim trajectories.
     deforestation_classes <- c("P Deforestation", "P Residual",
                                "DESMATAMENTO_CR", "DESMATAMENTO_VEG")
+
+################################################################################
+## TODO: convert into tests!
+#    res <-
+#        subareas_deter_prodes %>%
+#        dplyr::arrange(xy_id, VIEW_DATE)
+#    res_fil <-
+#        res %>%
+#        filter_trajectory(filter_col = "CLASSNAME", filter_val = "MINERACAO",
+#                          invert = FALSE)
+#    stopifnot(nrow(res) >= nrow(res_fil))
+#    stopifnot(ncol(res) == ncol(res_fil))
+#    stopifnot(length(unique(res[res$CLASSNAME == "MINERACAO",][["xy_id"]])) ==
+#length(unique(res_fil$xy_id)))
+#    stopifnot(all(unique(res_fil$xy_id) %in% unique(res$xy_id)))
+#    stopifnot(length(unique(res_fil$xy_id)) <= length(unique(res$xy_id)))
+#    res_fil_inv <-
+#        res %>%
+#        filter_trajectory(filter_col = "CLASSNAME", filter_val = "MINERACAO",
+#                          invert = TRUE)
+#    stopifnot(nrow(dplyr::filter(res_fil_inv, CLASSNAME == "MINERACAO")) == 0)
+################################################################################
+
+    # Prepare data
     subareas_analysis_1 <-
         subareas_deter_prodes %>%
-        dplyr::mutate(common_name = dplyr::recode(CLASSNAME,
-                                                  !!!prodes_common_names)) %>%
-        trim_trajectories(end_class = deforestation_classes) %>%
-        dplyr::select(-common_name)
-
-    # NOTE: Use only trajectories that include at least one PRODES event.
-    subareas_prodes_xyids <-
-        subareas_analysis_1 %>%
-        dplyr::filter(data_source == "PRODES") %>%
-        dplyr::pull(xy_id) %>%
-        unique() %>%
-        sort()
-
-    prodes_common_names <-
-        get_prodes_names() %>%
+        dplyr::arrange(.data[[said_col]], .data[[date_col]]) %>%
+    # Exclude trajectories involving mining.
+        filter_trajectory(filter_col = label_col,
+                          filter_val = "MINERACAO",
+                          invert = TRUE) %>%
+    # Allow only one (first) event by PRODES year.
+        dplyr::slice_head(n = 1,
+                          by = tidyselect::all_of(c(said_col, year_col))) %>%
         (function(x) {
-            y <- paste0("P ", x)
-            names(y) <- names(x)
-            return(y)
-        })
-
-    subareas_analysis_1 <-
-        subareas_analysis_1 %>%
-        dplyr::filter(xy_id %in% subareas_prodes_xyids)
+            stopifnot("Unknown end labels!" =
+                      any(unique(x[[label_col]]) %in%
+                          names(prodes_common_names)))
+            return(x)
+        }) %>%
+        dplyr::mutate(common_name = dplyr::recode(.data[[label_col]],
+                                                  !!!prodes_common_names)) %>%
+    # End trajectories as soon as they reach deforestation
+        trim_trajectories(end_class = deforestation_classes) %>%
+        dplyr::select(-common_name) %>%
+    # Use only trajectories that include at least one PRODES event.
+        filter_trajectory(filter_col = source_col,
+                          filter_val = "PRODES",
+                          invert = FALSE)
 
     plot_tb <-
         subareas_analysis_1 %>%
-        dplyr::arrange(xy_id, VIEW_DATE) %>%
-        dplyr::select(subarea_ha, CLASSNAME, xy_id, VIEW_DATE, data_source) %>%
-        dplyr::group_by(xy_id) %>%
+        dplyr::arrange(.data[[said_col]], .data[[date_col]]) %>%
+        dplyr::select(tidyselect::all_of(c(area_col, label_col, said_col,
+                                         date_col, source_col))) %>%
+        dplyr::group_by(.data[[said_col]]) %>%
         dplyr::mutate(n_warnings = dplyr::n(),
                       warning_pos = dplyr::row_number()) %>%
         dplyr::ungroup() %>%
+        # TODO: replace with name injection.
         dplyr::mutate(CLASSNAME = dplyr::recode(CLASSNAME,
                                                 !!!prodes_common_names),
                       CLASSNAME = stringr::str_replace_all(CLASSNAME,
                                                            pattern = "_",
                                                            replacement = " "),
-                      CLASSNAME = stringr::str_to_sentence(CLASSNAME)) %>%
-        data.table::as.data.table()
+                      CLASSNAME = stringr::str_to_sentence(CLASSNAME))
 
-    # Create Sankey figures.
-    # NOTE: I couldn't make ggsankey::geom_sankey use the variable subarea_ha.
     plot_ls <-
         plot_tb %>%
         dplyr::filter(n_warnings > 1) %>%
@@ -559,6 +597,7 @@ create_plots <- function(out_dir) {
         dplyr::group_by(n_warnings) %>%
         dplyr::group_split(.keep = TRUE) %>%
         purrr::map(get_plot_sankey)
+
     for (i in seq_along(plot_ls)) {
         ggplot2::ggsave(
             plot = plot_ls[[i]],
@@ -570,33 +609,10 @@ create_plots <- function(out_dir) {
             height = height, width = width, units = units
         )
     }
+
     rm(plot_ls)
     #rm(plot_tb)
-    rm(subareas_prodes_xyids)
     rm(i)
-
-###############################################################################
-# TODO: Create new sankey, including the actual year in the X axis.
-
-#NOTE: DETER & PRODES events are happenning during the same PRODES year!
-
-test <-
-    plot_tb %>%
-    dplyr::filter(n_warnings > 1,
-                  data_source == "DETER") %>%
-    dplyr::mutate(year = compute_prodes_year(VIEW_DATE)) %>%
-    dplyr::arrange(xy_id, VIEW_DATE)
-    # NOTE: repeat CLASSNAME to fill-in NA in each trajectory.
-    # dplyr::group_by(xy_id) %>%
-    # tidyr::fill(CLASSNAME, .direction = "downup") %>%
-    # dplyr::ungroup()
-test %>%
-    get_plot_sankey_year()
-
-
-
-###############################################################################
-
 
 
 
@@ -604,12 +620,13 @@ test %>%
 
     xyid_burn_scar <-
         subareas_analysis_1 %>%
-        dplyr::filter(CLASSNAME == "CICATRIZ_DE_QUEIMADA") %>%
-        dplyr::pull(xy_id) %>%
+        dplyr::filter(.data[[label_col]] == "CICATRIZ_DE_QUEIMADA") %>%
+        dplyr::pull(tidyselect::all_of(said_col)) %>%
         unique()
+
     subareas_analysis_2 <-
         subareas_analysis_1 %>%
-        dplyr::filter(xy_id %in% xyid_burn_scar)
+        dplyr::filter(.data[[said_col]] %in% xyid_burn_scar)
 
     plot_tb <-
         subareas_analysis_2 %>%
@@ -624,8 +641,7 @@ test %>%
                       CLASSNAME = stringr::str_replace_all(CLASSNAME,
                                                            pattern = "_",
                                                            replacement = " "),
-                      CLASSNAME = stringr::str_to_sentence(CLASSNAME)) %>%
-        data.table::as.data.table()
+                      CLASSNAME = stringr::str_to_sentence(CLASSNAME))
 
     # Create Sankey figures.
     # NOTE: I couldn't make ggsankey::geom_sankey use the variable subarea_ha.
@@ -636,6 +652,7 @@ test %>%
         dplyr::group_by(n_warnings) %>%
         dplyr::group_split(.keep = TRUE) %>%
         purrr::map(get_plot_sankey)
+
     for (i in seq_along(plot_ls)) {
         ggplot2::ggsave(
             plot = plot_ls[[i]],
@@ -653,10 +670,35 @@ test %>%
 
 
 
+    # TODO: Create map by trajetory.
+
+    #---- Fire spots ----
+
+
+    # Column names
+    date_col <- "datahora"
+    nfspot_col <- "n_fspot"
+
+
+    # Proportion of fires spots inside DETER
+    # NOTE: The fire spots associated to a xy_id fall inside a DETER warning
+    #       at some point in time. Those outside could our could not fall
+    #       inside PRODES forest mask.
+    # sum(!is.na(fire_sf$xy_id))/nrow(fire_sf)
+
+    # Number of fire spots by month and state.
+    plot_fire_spots_by_month <-
+        fire_sf %>%
+        sf::st_drop_geometry() %>%
+        get_plot_fire_by_month()
+    ggplot2::ggsave(plot_fire_spots_by_month,
+                    filename = file.path(out_fig,
+                                         "plot_fire_spots_by_month.png"),
+                    height = height, width = width, units = units)
+
 
     #---- End ----
     invisible(out_dir)
 
 }
-
 

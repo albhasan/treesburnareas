@@ -6,6 +6,8 @@
 library(magrittr)
 library(sf)
 
+library(treesburnareas)
+
 out_dir <- "/home/alber/Documents/data/treesburnedareas"
 out_file <- file.path(out_dir, "deter_subareas_flat.gpkg")
 

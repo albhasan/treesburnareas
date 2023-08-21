@@ -4,13 +4,27 @@
 \alias{get_plot_area_by_class_state}
 \title{Build a histogram using the classes of DETER by Brazilian state.}
 \usage{
-get_plot_area_by_class_state(subarea_dt)
+get_plot_area_by_class_state(
+  subarea_tb,
+  area_col = "subarea_ha",
+  label_col = "CLASSNAME",
+  state_col = "UF",
+  year_col = "year"
+)
 }
 \arguments{
-\item{subarea_dt}{A data.table object hosted in this package.}
+\item{subarea_tb}{A tibble hosted in this package.}
+
+\item{area_col}{A character. Name of the column with area (ha).}
+
+\item{label_col}{A character. Name of the column with labels.}
+
+\item{state_col}{A character. Name of the column with state.}
+
+\item{year_col}{A character. Name of the column with year (PRODES).}
 }
 \value{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{       A ggplot2 object.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{      A ggplot2 object.
 }\if{html}{\out{</div>}}
 }
 \description{

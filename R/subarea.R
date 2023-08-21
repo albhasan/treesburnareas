@@ -30,10 +30,11 @@ get_flat_subarea <- function(subarea_sf) {
 #' each subarea, to the actual centroids computed using the sf package.
 #' @param data_sf  An sf object.
 #' @param sample_n An integer.
-#' @param tol      A numberic. The tolerance used for the comparison.
+#' @param tol      A numeric. The tolerance used for the comparison.
 #' @return         A logical.
 #' @export
 test_centroids <- function(data_sf, sample_n = 50, tol = 0.00001) {
+    X <- x_id <- Y <- y_id <- NULL
     said_col <- "xy_id"
     # Get a random xy id.
     ids <-

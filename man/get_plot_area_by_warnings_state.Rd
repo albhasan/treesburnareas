@@ -4,13 +4,25 @@
 \alias{get_plot_area_by_warnings_state}
 \title{Build histograms by state using DETER deforestation warnings.}
 \usage{
-get_plot_area_by_warnings_state(subarea_dt, area_breaks)
+get_plot_area_by_warnings_state(
+  subarea_tb,
+  area_breaks,
+  area_col = "subarea_ha",
+  said_col = "xy_id",
+  state_col = "UF"
+)
 }
 \arguments{
-\item{subarea_dt}{A data.table object hosted in this package.}
+\item{subarea_tb}{A tibble hosted in this package.}
 
 \item{area_breaks}{A named numeric vector with the breaks of subareas by
 size.}
+
+\item{area_col}{A character. Name of the column with area (ha).}
+
+\item{said_col}{A character. Nma of the subarea ID column.}
+
+\item{state_col}{A character. Name of the column with state.}
 }
 \value{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{       A ggplot2 object.
