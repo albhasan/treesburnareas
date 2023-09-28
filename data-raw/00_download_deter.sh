@@ -3,7 +3,8 @@
 # Download DETER data from terrabrailis.
 ###############################################################################
 
-OUT_DIR="${HOME}/data/deter/amazonia_legal"
+OUT_DIR="${HOME}/data/terrabrasilis/deter/amazonia_legal"
+
 
 [ -d "${OUT_DIR}" ] || { echo "ERROR: Directory ${OUT_DIR} does not exist!" >&2; exit 1; }
 

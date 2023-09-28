@@ -3,7 +3,7 @@
 # Download PRODES data from terrabrailis.
 ###############################################################################
 
-OUT_DIR="${HOME}/data/prodes/amazonia"
+OUT_DIR="${HOME}/data/terrabrasilis/prodes/amazonia"
 
 [ -d "${OUT_DIR}" ] || { echo "ERROR: Directory ${OUT_DIR} does not exist!" >&2; exit 1; }
 

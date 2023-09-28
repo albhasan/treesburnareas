@@ -58,21 +58,22 @@ NULL
 #' @keywords datasets
 #' @usage data(fire_sf)
 #' @format A tibble with 4428447 rows and 16 variables:
-#'   datahora: Date time of observation.
-#'   satelite: Name of the satellite.
-#'   pais: Country name.
-#'   estado: State name.
-#'   municipio: Town name.
-#'   bioma: Biome.
-#'   diasemchuv: Number of days without rain.
-#'   precipitac: TODO.
-#'   riscofogo: Fire risk.
-#'   latitude: Latitude.
-#'   longitude: Longitude.
-#'   frp: Fire Radiative Power.
-#'   xy_id: Subarea id (based on their centroid coordinates).
-#'   prodes_code: Land Use-Cover code in PRODES 2021.
-#'   prodes_date: View date in PRODES 2021.
-#'   geom: geometry field.
+#'   datahora: Date time of observation,
+#'   satelite: Name of the satellite,
+#'   pais: Country name,
+#'   estado: State name,
+#'   municipio: Town name,
+#'   bioma: Biome,
+#'   diasemchuv: Number of days without rain,
+#'   precipitac: TODO,
+#'   riscofogo: Fire risk,
+#'   latitude: Latitude,
+#'   longitude: Longitude,
+#'   frp: Fire Radiative Power,
+#'   xy_id: Subarea id (based on their centroid coordinates),
+#'   prodes_code: Land Use-Cover code in PRODES 2021,
+#'   prodes_date: View date in PRODES 2021,
+#'   year: PRODES year,
+#'   geom: geometry field,
 NULL
 

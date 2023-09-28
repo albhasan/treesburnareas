@@ -26,10 +26,12 @@ fire_sf <-
 
 #---- Prepare data ----
 
+# TODO: Add prodes year.
 fire_sf <-
     fire_sf %>%
     dplyr::mutate(datahora = lubridate::as_datetime(datahora),
-                  prodes_date = as.Date(prodes_date, origin = "1970-01-01")) %>%
+                  prodes_date = as.Date(prodes_date, origin = "1970-01-01"),
+                  year = compute_prodes_year(datahora)) %>%
     dplyr::arrange(xy_id, datahora, prodes_date)
 
 

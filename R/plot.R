@@ -627,3 +627,59 @@ get_plot_fire_by_month <- function(data_tb,
         return()
 }
 
+
+
+#' @title Build a histogram plot of fire spot data by state and month
+#'
+#' @name get_plot_fire_by_month_state
+#'
+#' @description
+#' This function creates line plot of the given fire spot data.
+#' @param data_tb   A tibble.
+#' @param date_col  A character. Name of the column with date time of fire
+#' spot.
+#' @param year_col  A character. Name of the column with year.
+#' @param month_col A character. Name of the column with month.
+#' @param state_col A character. Name of the column with the Brazilian state.
+#' @return          A ggplot2 object.
+#' @export
+get_plot_fire_by_month_state <- function(data_tb,
+                                         date_col = "datahora",
+                                         year_col = "year",
+                                         month_col = "month",
+                                         state_col = "estado") {
+
+    nfspot_col <- "n_fspot"
+
+    #---- Prepare data ----
+    plot_tb <-
+        data_tb %>%
+        dplyr::mutate(
+            "{month_col}" := as.integer(lubridate::month(.data[[date_col]])),
+            "{month_col}" := factor(month.abb[.data[[month_col]]],
+                                    ordered = TRUE,
+                                    levels = month.abb),
+            "{year_col}" := as.integer(lubridate::year(.data[[date_col]])),
+            "{year_col}" := factor(.data[[year_col]], ordered = TRUE,
+                          levels = rev(sort(unique(.data[[year_col]]))))) %>%
+        dplyr::summarize("{nfspot_col}" := dplyr::n(),
+                         "{state_col}" := dplyr::first(.data[[state_col]]),
+                         .by = tidyselect::all_of(c(state_col, year_col,
+                                                    month_col)))
+
+    #---- Plot ----
+    plot_tb %>%
+        ggplot2::ggplot() +
+        ggplot2::geom_line(ggplot2::aes_string(x = month_col,
+                                               y = nfspot_col,
+                                               group = year_col,
+                                               colour = year_col),
+                           linewidth = 1.0) +
+        ggplot2::facet_wrap(ggplot2::vars(.data[[state_col]])) +
+        ggplot2::xlab("") +
+        ggplot2::ylab("Number of fire spots") +
+        ggplot2::scale_y_continuous(labels = scales::comma) +
+        ggplot2::theme(legend.title = ggplot2::element_blank()) %>%
+        return()
+}
+
