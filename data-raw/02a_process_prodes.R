@@ -20,26 +20,27 @@ library(terra)
 
 #---- Set up ----
 
-out_directory <- "/home/alber/Documents/data/treesburnedareas"
-stopifnot(dir.exists(out_directory))
+out_dir <- "/home/alber/Documents/data/treesburnedareas"
+stopifnot("Out directory not found: " = dir.exists(out_dir))
 
 prodes_year <- "2021"
 
-prodes_raster   <- file.path(out_directory, "prodes_raster.tif")
-prodes_viewdate <- file.path(out_directory, "prodes_viewdate.tif")
-rm(out_directory)
+prodes_raster   <- file.path(out_dir, "prodes_raster.tif")
+prodes_viewdate <- file.path(out_dir, "prodes_viewdate.tif")
+rm(out_dir)
 
-# NOTE: Use the biome, not the BLA.
-prodes_tif <- paste0("/home/alber/data/prodes/amazonia/",
-                     "PDigital2000_2021_AMZ_raster_v20220915_bioma.tif")
-cloud_shp <- "/home/alber/data/prodes/amazonia/cloud_biome.shp"
-def07_shp <- paste0("/home/alber/data/prodes/amazonia/",
-                  "accumulated_deforestation_2007_biome.shp")
-defor_shp <- "/home/alber/data/prodes/amazonia/yearly_deforestation_biome.shp"
-fores_shp <- "/home/alber/data/prodes/amazonia/forest_biome_2021.shp"
-hydro_shp <- "/home/alber/data/prodes/amazonia/hydrography_biome.shp"
-nofor_shp <- "/home/alber/data/prodes/amazonia/no_forest_biome.shp"
-resid_shp <- "/home/alber/data/prodes/amazonia/residual_biome.shp"
+# NOTE: Use the biome, not the Brazilian Legal Amazon.
+data_dir <- "/home/alber/data/prodes/amazonia"
+stopifnot("Data directory not found: " = dir.exists(data_dir))
+cloud_shp <- file.path(data_dir, "cloud_biome.shp")
+def07_shp <- file.path(data_dir, "accumulated_deforestation_2007_biome.shp")
+defor_shp <- file.path(data_dir, "yearly_deforestation_biome.shp")
+fores_shp <- file.path(data_dir, "forest_biome_2021.shp")
+hydro_shp <- file.path(data_dir, "hydrography_biome.shp")
+nofor_shp <- file.path(data_dir, "no_forest_biome.shp")
+resid_shp <- file.path(data_dir, "residual_biome.shp")
+prodes_tif <- file.path(data_dir,
+                        "PDigital2000_2021_AMZ_raster_v20220915_bioma.tif")
 
 stopifnot("PRODES files not found!" = file.exists(cloud_shp, def07_shp,
                                                   defor_shp, fores_shp,
