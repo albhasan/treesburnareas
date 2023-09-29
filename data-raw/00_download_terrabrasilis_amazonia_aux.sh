@@ -3,7 +3,7 @@
 # Download auxiliary data from from terrabrailis (amazonia biome).
 ###############################################################################
 
-OUT_DIR="${HOME}/data/terrabrasilis/amazonia"
+OUT_DIR="${HOME}/data/terrabrasilis"
 
 [ -d "${OUT_DIR}" ] || { echo "ERROR: Directory ${OUT_DIR} does not exist!" >&2; exit 1; }
 
