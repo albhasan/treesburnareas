@@ -2,7 +2,7 @@
 ###############################################################################
 # EXPORT DETER SHP TO GEOPACKAGE AND FIX THEIR POLYGONS.
 ###############################################################################
-stop "This doesn't work! Use QGIS!"
+echo "ERROR: This script is deprecated. Use QGIS instead." >& 2
 exit 1
 
 

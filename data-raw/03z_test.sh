@@ -1,5 +1,5 @@
 #!/bin/bash
-stop "This doesn't work! Use QGIS instead!"
+echo "ERROR: This script is deprecated. Use QGIS instead." >& 2
 exit 1
 
 # Path to the DETER file downloaded from TERRABRASILIS
