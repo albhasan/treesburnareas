@@ -7,7 +7,7 @@
 
 #---- Setup ----
 
-# NOTE: Use the biome, not the BLA.
+# NOTE: Use the biome, not the Brazilian Legal Amazon.
 TIF_FILE="/home/alber/Documents/data/treesburnedareas/prodes_raster.tif"
 OUT_TIF="/home/alber/Documents/data/treesburnedareas/prodes_mask.tif"
 OUT_VEC="/home/alber/Documents/data/treesburnedareas/prodes_mask.gpkg"
