@@ -1,6 +1,7 @@
 #!/bin/bash
 ###############################################################################
 # EXPORT DETER SHP TO GEOPACKAGE AND FIX THEIR POLYGONS.
+# NOTE: Use deter_public_vis.gpkg for visualization ONLY!
 ###############################################################################
 
 
@@ -24,16 +25,16 @@ is_file_valid () {
     if [ -f "$1" ]; then
         echo "INFO: File found: $1"
     else
-        echo "ERROR: Missing file: $1"
+        echo "ERROR: Missing file: $1" >& 2
         exit 1
     fi
 }
 
 is_dir_valid () {
     if [ -d "$1" ]; then
-        echo "INFO: Directory found: $GRASS_DATA" 
+        echo "INFO: Directory found: $GRASS_DATA"
     else
-        echo "ERROR: Missing directory: $GRASS_DATA"
+        echo "ERROR: Missing directory: $GRASS_DATA" >& 2
         exit 1
     fi
 }
@@ -44,14 +45,14 @@ is_dir_valid () {
 if command -v ogr2ogr &> /dev/null; then
         echo "INFO: ogr2ogr found!"
     else
-        echo "ERROR: ogr2ogr could not be found. Please install it."
+        echo "ERROR: ogr2ogr could not be found. Please install it." >& 2
         exit 1
 fi
 
 if command -v grass &> /dev/null; then
         echo "INFO: grass gis found!"
     else
-        echo "ERROR: grass gis could not be found. Please install it."
+        echo "ERROR: grass gis could not be found. Please install it." >& 2
         exit 1
 fi
 
