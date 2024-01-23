@@ -11,7 +11,6 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.0
-LazyData: true
 Depends: 
     R (>= 3.5.0)
 Imports:
@@ -21,6 +20,7 @@ Imports:
     geobr,
     ggplot2,
     ggsankey,
+    graphics,
     janitor,
     kableExtra,
     lubridate,
@@ -40,5 +40,6 @@ Imports:
 Remotes:
     github::davidsjoberg/ggsankey
 Suggests: 
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    treesburnareasdata
 Config/testthat/edition: 3

@@ -4,14 +4,83 @@
 \alias{create_plots}
 \title{Create EDA plots and tables}
 \usage{
-create_plots(out_dir, subarea_tb, fire_sf)
+create_plots(
+  out_dir,
+  subarea_tb,
+  subarea_sf,
+  fire_sf,
+  area_col = "subarea_ha",
+  date_col = "VIEW_DATE",
+  inprodes_col = "in_prodes",
+  label_col = "CLASSNAME",
+  month_col = "month",
+  ntraj_col = "n_traj",
+  nwarn_col = "n_warnings",
+  nwarn_pos = "warning_pos",
+  said_col = "xy_id",
+  source_col = "data_source",
+  state_col = "UF",
+  year_col = "year",
+  area_breaks = c(`0` = 0, `6,25 ha` = 6.25, `10 ha` = 10, `25 ha` = 25, `50 ha` = 50,
+    `100 ha` = 100, `250 ha` = 250, `500 ha` = 500, `1000 ha` = 1000, `> 1000 ha` = Inf),
+  top_rows = 5,
+  height = 210,
+  width = 297,
+  units = "mm",
+  max_date = as.Date("2021-08-01"),
+  min_subarea_ha = 3
+)
 }
 \arguments{
 \item{out_dir}{A path to a directory.}
 
 \item{subarea_tb}{A tibble with data about DETER subareas.}
 
+\item{subarea_sf}{A sf object with the spatial data associated to
+subarea_tb.}
+
 \item{fire_sf}{A sf object (point). Fire spots.}
+
+\item{area_col}{Name of the area column.}
+
+\item{date_col}{Name of the column with the date of the warning.}
+
+\item{inprodes_col}{Name of the column indicating if the warning is present
+in PRODES.}
+
+\item{label_col}{Name of the label column.}
+
+\item{month_col}{Name of the column with the month of the warning.}
+
+\item{ntraj_col}{Name of the column with the number of trajectories.}
+
+\item{nwarn_col}{Name of the column with the number of warnings.}
+
+\item{nwarn_pos}{Name of the column with the position of the warning in the
+trajectory.}
+
+\item{said_col}{Name of the column with the SubArea ID.}
+
+\item{source_col}{Name of the column with the origin of the warning (e.g.
+DETER or PRODES).}
+
+\item{state_col}{Name of the column with the name of the state.}
+
+\item{year_col}{Name of the column with the PRODES year.}
+
+\item{area_breaks}{Named vector with break values of for the area column.}
+
+\item{top_rows}{Nuber of rows to export as LateX tables.}
+
+\item{height}{Size of the output figures.}
+
+\item{width}{Size of the output figures.}
+
+\item{units}{Units of height and width.}
+
+\item{max_date}{Only include warnings before this date.}
+
+\item{min_subarea_ha}{Mininum area of a subarea.}
 }
 \value{
 out_dir (invisible).
@@ -19,9 +88,4 @@ out_dir (invisible).
 \description{
 This function creates the figures and tables of the Exploratory Data
 Analysis of the Amazonia deforestation warnings issued by DETER.
-}
-\examples{
-\dontrun{
-    create_plots(out_dir = "~/Documents/report")
-}
 }

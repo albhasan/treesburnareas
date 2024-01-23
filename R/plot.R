@@ -240,6 +240,7 @@ get_plot_area_by_warnings_state <- function(subarea_tb, area_breaks,
     #---- Plot ----
         ggplot2::ggplot() +
         ggplot2::geom_col(ggplot2::aes_string(x = nwarn_col,
+                                              y = area_col,
                                               fill = "area_type"),
                           position = "dodge") +
         ggplot2::xlab("Number of wanings.") +
