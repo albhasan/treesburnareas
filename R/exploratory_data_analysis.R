@@ -101,7 +101,6 @@ create_plots <- function(out_dir, subarea_tb, subarea_sf, fire_sf,
 
 
     #---- Utilitary ----
-
     # Add percentages column and totals row to tibble.
     # @param data_tb  A tibble.
     # @param top_rows An integer. Number of top rows to keep.
@@ -189,7 +188,7 @@ create_plots <- function(out_dir, subarea_tb, subarea_sf, fire_sf,
                                                     label_col))) %>%
         dplyr::arrange(.data[[state_col, year_col,
                        dplyr::desc("area_km2")]]) %>%
-        dplyr::mutate("{{year}}" := as.character({{year_col}})) %>%
+        dplyr::mutate("{year_col}" := as.character(.data[[year_col]])) %>%
         janitor::adorn_totals() %>%
         .table_helper(label = "tab:deter_area_by_state_pyear_type", 
                       columns = 1:2) %>%
@@ -215,6 +214,27 @@ create_plots <- function(out_dir, subarea_tb, subarea_sf, fire_sf,
             .data[[area_col]] > min_subarea_ha
         )
 
+    
+
+    #---- Histogram DETER area by class ----
+
+    subareas_deter_prodes %>%
+        dplyr::filter(.data[[source_col]] == "DETER") %>%
+        get_plot_area_by_class() %>%
+        ggplot2::ggsave(filename = file.path(out_fig,
+                                             "plot_deter_area_by_class.png"),
+                        height = height, width = width, units = units)
+
+
+
+    #---- Histogram DETER area by class & state ----
+
+    subareas_deter_prodes %>%
+        dplyr::filter(.data[[source_col]] == "DETER") %>%
+        get_plot_area_by_class_state() %>%
+        ggplot2::ggsave(filename = file.path(out_fig,
+                                         "plot_deter_area_by_class_state.png"),
+                        height = height, width = width, units = units)
 
 
     #---- Point density: DETER subareas by state, year, warning type and area
@@ -240,25 +260,6 @@ create_plots <- function(out_dir, subarea_tb, subarea_sf, fire_sf,
 
 
 
-    #---- Histogram DETER area by class ----
-
-    subareas_deter_prodes %>%
-        dplyr::filter(.data[[source_col]] == "DETER") %>%
-        get_plot_area_by_class() %>%
-        ggplot2::ggsave(filename = file.path(out_fig,
-                                             "plot_deter_area_by_class.png"),
-                        height = height, width = width, units = units)
-
-
-
-    #---- Histogram DETER area by class & state ----
-
-    subareas_deter_prodes %>%
-        dplyr::filter(.data[[source_col]] == "DETER") %>%
-        get_plot_area_by_class_state() %>%
-        ggplot2::ggsave(filename = file.path(out_fig,
-                                         "plot_deter_area_by_class_state.png"),
-                        height = height, width = width, units = units)
 
 
 
@@ -323,6 +324,7 @@ create_plots <- function(out_dir, subarea_tb, subarea_sf, fire_sf,
                     height = height, width = width, units = units)
     rm(sankey_year)
 
+
     # Create latex tables (by number of warnings).
     table_ls <-
         plot_tb %>%
@@ -333,6 +335,8 @@ create_plots <- function(out_dir, subarea_tb, subarea_sf, fire_sf,
         furrr::future_map(get_trajectory_stats)
 
     for (i in seq_along(table_ls)) {
+# TODO: This throws an erro on iteration 1!
+print(paste(".adorn_table 326:", i))
         table_ls %>%
             magrittr::extract2(i) %>%
             dplyr::select(-min_area, -max_area, -mean_area,
@@ -455,6 +459,7 @@ create_plots <- function(out_dir, subarea_tb, subarea_sf, fire_sf,
         dplyr::group_split(.keep = TRUE) %>%
         purrr::map(get_trajectory_stats)
     for (i in seq_along(table_ls)) {
+print(paste(".adorn_table 450 ", i))
         table_ls %>%
             magrittr::extract2(i) %>%
             dplyr::select(-min_area, -max_area, -mean_area,
