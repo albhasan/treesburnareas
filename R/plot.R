@@ -118,26 +118,28 @@ get_plot_density_area_ndays <- function(subarea_tb, area_col = "subarea_ha",
         tibble::as_tibble() %>%
     #---- Plot ----
         ggplot2::ggplot() +
-        ggplot2::geom_point(ggplot2::aes_string(x = "diff_days",
-                                         y = area_col,
-                                         color = year_col),
+        ggplot2::geom_point(ggplot2::aes_string(y = "diff_days", 
+                                                x = area_col, 
+                                                color = year_col),
                             size = 0.1,
                             na.rm = TRUE) +
-        ggplot2::geom_density_2d(ggplot2::aes_string(x = "diff_days",
-                                                     y = area_col),
+        ggplot2::geom_density_2d(ggplot2::aes_string(y = "diff_days",
+                                                     x = area_col),
                                  contour_var = "density",
                                  na.rm = TRUE) +
-        ggplot2::scale_y_log10(labels = scales::comma) +
-        ggplot2::facet_grid(stats::reformulate(state_col, label_col)) +
-        ggplot2::geom_vline(xintercept = 365, linetype = 3, color = "gray50") +
-        ggplot2::geom_vline(xintercept = 730, linetype = 3, color = "gray50") +
-        ggplot2::geom_vline(xintercept = 1095,linetype = 3, color = "gray50") +
-        ggplot2::geom_vline(xintercept = 1460,linetype = 3, color = "gray50") +
-        ggplot2::geom_vline(xintercept = 1825,linetype = 3, color = "gray50") +
+        ggplot2::scale_x_log10(labels = scales::comma) +
+        ggplot2::facet_grid(stats::reformulate(state_col, label_col),
+                            labeller = label_parsed) +
+        ggplot2::geom_hline(yintercept = 365, linetype = 3, color = "gray50") +
+        ggplot2::geom_hline(yintercept = 730, linetype = 3, color = "gray50") +
+        ggplot2::geom_hline(yintercept = 1095,linetype = 3, color = "gray50") +
+        ggplot2::geom_hline(yintercept = 1460,linetype = 3, color = "gray50") +
+        ggplot2::geom_hline(yintercept = 1825,linetype = 3, color = "gray50") +
         ggplot2::theme(legend.title = ggplot2::element_blank()) +
-        ggplot2::xlab("Number of days between warnings") +
-        ggplot2::ylab("Subarea (ha)") +
-        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90)) %>%
+        ggplot2::ylab("Number of days between warnings") +
+        ggplot2::xlab("") +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90), 
+                       strip.text.y = element_text(angle = 0)) %>%
         return()
 }
 
