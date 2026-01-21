@@ -19,8 +19,8 @@ A vector.
 }
 \description{
 This function returns the numeric codes using for the PRODES classes. This
-function keeps track of the classes used in PRODES products along the years
-(raster and vector).
+function keeps track of the classes used in PRODES products (vector and
+raster) along time.
 
 This function computes the mode of the given vector, ignoring NA elements.
 }
