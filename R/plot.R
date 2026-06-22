@@ -15,60 +15,82 @@
 #' @return             A ggplot2 object.
 #' @export
 get_plot_area_by_state_year_type <- function(subarea_tb, class_levels,
-                                             area_col  = "subarea_ha",
+                                             area_col = "subarea_ha",
                                              label_col = "CLASSNAME",
                                              state_col = "UF",
-                                             year_col  = "year") {
-    area_km2 <- NULL
+                                             year_col = "year") {
+  .data <- area_km2 <- NULL
 
-    #---- Prepapre data ----
-    p_years <- sort(unique(subarea_tb[[year_col]]))
-    b_states <- sort(unique(subarea_tb[[state_col]]))
-    subarea_tb %>%
-        dplyr::group_by(.data[[state_col]],
-                        .data[[label_col]],
-                        .data[[year_col]]) %>%
-        dplyr::summarize("{area_col}" := sum(.data[[area_col]])/100) %>%
-        dplyr::ungroup() %>%
-        tibble::as_tibble() %>%
-        dplyr::mutate(year = factor(as.character(.data[[year_col]]),
-                                    levels = as.character(p_years),
-                                    ordered = TRUE),
-                      UF = factor(.data[[state_col]],
-                                  levels = b_states,
-                                  ordered = TRUE),
-                      CLASSNAME = factor(.data[[label_col]],
-                                         levels = class_levels,
-                                         ordered = TRUE),
-                      area_km2 = .data[[area_col]] / 100,
-                      area_label = paste(round(area_km2, digits = 1),
-                                         "km2")) %>%
-        dplyr::arrange(.data[[state_col]],
-                       .data[[label_col]],
-                       .data[[year_col]],
-                       .data[["area_km2"]]) %>%
+  #---- Prepapre data ----
+  p_years <- sort(unique(subarea_tb[[year_col]]))
+  b_states <- sort(unique(subarea_tb[[state_col]]))
+
+  fig <-
+    subarea_tb |>
+    dplyr::group_by(
+      .data[[state_col]],
+      .data[[label_col]],
+      .data[[year_col]]
+    ) |>
+    dplyr::summarize("{area_col}" := sum(.data[[area_col]]) / 100) |>
+    dplyr::ungroup() |>
+    tibble::as_tibble() |>
+    dplyr::mutate(
+      year = factor(as.character(.data[[year_col]]),
+        levels = as.character(p_years),
+        ordered = TRUE
+      ),
+      UF = factor(.data[[state_col]],
+        levels = b_states,
+        ordered = TRUE
+      ),
+      CLASSNAME = factor(.data[[label_col]],
+        levels = class_levels,
+        ordered = TRUE
+      ),
+      area_km2 = .data[[area_col]] / 100,
+      area_label = paste(
+        round(area_km2, digits = 1),
+        "km2"
+      )
+    ) |>
+    dplyr::arrange(
+      .data[[state_col]],
+      .data[[label_col]],
+      .data[[year_col]],
+      .data[["area_km2"]]
+    ) |>
     #---- Plot ----
     # NOTE: To use personalized colors, use a named vector "cat" = "hexcolor"
     #       and pass it to ggplot2:scale_fill_manual(values = my_colors).
-        ggplot2::ggplot(ggplot2::aes_string(area = "area_km2",
-                                            fill = label_col,
-                                            label = "area_label",
-                                            subgroup = state_col,
-                                            subgroup2 = year_col)) +
-        treemapify::geom_treemap() +
-        treemapify::geom_treemap_subgroup_border(colour = "white", size = 10) +
-        treemapify::geom_treemap_subgroup2_border(colour = "white", size = 2) +
-        treemapify::geom_treemap_text(colour = "white", place = "centre",
-                                      size = 10, grow = FALSE) +
-        treemapify::geom_treemap_subgroup_text(place = "topleft", grow = FALSE,
-                                               alpha = 0.3, colour = "black",
-                                               fontface = "bold", size = 96) +
-        treemapify::geom_treemap_subgroup2_text(place = "centre", grow = FALSE,
-                                                alpha = 0.4, colour = "black",
-                                                fontface = "plain",
-                                                size = 24) +
-        ggplot2::theme(legend.title = ggplot2::element_blank()) %>%
-        return()
+    ggplot2::ggplot(ggplot2::aes_string(
+      area = "area_km2",
+      fill = label_col,
+      label = "area_label",
+      subgroup = state_col,
+      subgroup2 = year_col
+    )) +
+    treemapify::geom_treemap() +
+    treemapify::geom_treemap_subgroup_border(colour = "white", size = 10) +
+    treemapify::geom_treemap_subgroup2_border(colour = "white", size = 2) +
+    treemapify::geom_treemap_text(
+      colour = "white", place = "centre",
+      size = 10, grow = FALSE
+    ) +
+    treemapify::geom_treemap_subgroup_text(
+      place = "topleft", grow = FALSE,
+      alpha = 0.3, colour = "black",
+      fontface = "bold", size = 96
+    ) +
+    treemapify::geom_treemap_subgroup2_text(
+      place = "centre", grow = FALSE,
+      alpha = 0.4, colour = "black",
+      fontface = "plain",
+      size = 24
+    ) +
+    ggplot2::theme(legend.title = ggplot2::element_blank())
+
+  return(fig)
 }
 
 #' @title Build a dot cloud figure using DETER deforestation warnings.
@@ -95,52 +117,73 @@ get_plot_density_area_ndays <- function(subarea_tb, area_col = "subarea_ha",
                                         label_col = "CLASSNAME",
                                         said_col = "xy_id", state_col = "UF",
                                         year_col = "year") {
+  .data <- label_parsed <- NULL
 
-    #---- Prepare data ----
-    subarea_tb %>%
-        dplyr::group_by(.data[[said_col]]) %>%
-        dplyr::arrange(.data[[date_col]], .by_group = TRUE) %>%
-        dplyr::mutate(last_CLASSNAME = dplyr::lag(.data[[label_col]]),
-                      last_VIEW_DATE = dplyr::lag(.data[[date_col]]),
-                      diff_days = as.vector(difftime(.data[[date_col]],
-                                                     .data[["last_VIEW_DATE"]],
-                                                     units = "days"))) %>%
-        dplyr::ungroup() %>%
-        dplyr::filter(.data[[area_col]] > 3,
-                      .data[["diff_days"]] > 0,
-                      !is.na(.data[["diff_days"]]),
-                      !is.na(.data[["last_CLASSNAME"]])) %>%
-        dplyr::mutate(
-            UF = forcats::fct_relevel(.data[[state_col]], sort),
-            year = forcats::fct_relevel(as.character(.data[[year_col]]),
-                                        sort)
-        ) %>%
-        tibble::as_tibble() %>%
+  #---- Prepare data ----
+  fig <-
+    subarea_tb |>
+    dplyr::group_by(.data[[said_col]]) |>
+    dplyr::arrange(.data[[date_col]], .by_group = TRUE) |>
+    dplyr::mutate(
+      last_CLASSNAME = dplyr::lag(.data[[label_col]]),
+      last_VIEW_DATE = dplyr::lag(.data[[date_col]]),
+      diff_days = as.vector(difftime(.data[[date_col]],
+        .data[["last_VIEW_DATE"]],
+        units = "days"
+      ))
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::filter(
+      .data[[area_col]] > 3,
+      .data[["diff_days"]] > 0,
+      !is.na(.data[["diff_days"]]),
+      !is.na(.data[["last_CLASSNAME"]])
+    ) |>
+    dplyr::mutate(
+      UF = forcats::fct_relevel(.data[[state_col]], sort),
+      year = forcats::fct_relevel(
+        as.character(.data[[year_col]]),
+        sort
+      )
+    ) |>
+    tibble::as_tibble() |>
     #---- Plot ----
-        ggplot2::ggplot() +
-        ggplot2::geom_point(ggplot2::aes_string(y = "diff_days", 
-                                                x = area_col, 
-                                                color = year_col),
-                            size = 0.1,
-                            na.rm = TRUE) +
-        ggplot2::geom_density_2d(ggplot2::aes_string(y = "diff_days",
-                                                     x = area_col),
-                                 contour_var = "density",
-                                 na.rm = TRUE) +
-        ggplot2::scale_x_log10(labels = scales::comma) +
-        ggplot2::facet_grid(stats::reformulate(state_col, label_col),
-                            labeller = label_parsed) +
-        ggplot2::geom_hline(yintercept = 365, linetype = 3, color = "gray50") +
-        ggplot2::geom_hline(yintercept = 730, linetype = 3, color = "gray50") +
-        ggplot2::geom_hline(yintercept = 1095,linetype = 3, color = "gray50") +
-        ggplot2::geom_hline(yintercept = 1460,linetype = 3, color = "gray50") +
-        ggplot2::geom_hline(yintercept = 1825,linetype = 3, color = "gray50") +
-        ggplot2::theme(legend.title = ggplot2::element_blank()) +
-        ggplot2::ylab("Number of days between warnings") +
-        ggplot2::xlab("") +
-        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90), 
-                       strip.text.y = element_text(angle = 0)) %>%
-        return()
+    ggplot2::ggplot() +
+    ggplot2::geom_point(
+      ggplot2::aes_string(
+        y = "diff_days",
+        x = area_col,
+        color = year_col
+      ),
+      size = 0.1,
+      na.rm = TRUE
+    ) +
+    ggplot2::geom_density_2d(
+      ggplot2::aes_string(
+        y = "diff_days",
+        x = area_col
+      ),
+      contour_var = "density",
+      na.rm = TRUE
+    ) +
+    ggplot2::scale_x_log10(labels = scales::comma) +
+    ggplot2::facet_grid(stats::reformulate(state_col, label_col),
+      labeller = label_parsed
+    ) +
+    ggplot2::geom_hline(yintercept = 365, linetype = 3, color = "gray50") +
+    ggplot2::geom_hline(yintercept = 730, linetype = 3, color = "gray50") +
+    ggplot2::geom_hline(yintercept = 1095, linetype = 3, color = "gray50") +
+    ggplot2::geom_hline(yintercept = 1460, linetype = 3, color = "gray50") +
+    ggplot2::geom_hline(yintercept = 1825, linetype = 3, color = "gray50") +
+    ggplot2::theme(legend.title = ggplot2::element_blank()) +
+    ggplot2::ylab("Number of days between warnings") +
+    ggplot2::xlab("") +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 90),
+      strip.text.y = ggplot2::element_text(angle = 0)
+    )
+
+  return(fig)
 }
 
 
@@ -160,40 +203,52 @@ get_plot_density_area_ndays <- function(subarea_tb, area_col = "subarea_ha",
 #' @return            A ggplot2 object.
 #' @export
 get_plot_area_by_warnings <- function(subarea_tb, area_breaks,
-                                      area_col  = "subarea_ha",
-                                      said_col  = "xy_id") {
+                                      area_col = "subarea_ha",
+                                      said_col = "xy_id") {
+  stopifnot(
+    "area_breaks must be a named vector" =
+      !is.null(names(area_breaks))
+  )
 
-    stopifnot("area_breaks must be a named vector" =
-              !is.null(names(area_breaks)))
+  nwarn_col <- "n_warnings"
+  .data <- NULL
 
-    nwarn_col <- "n_warnings"
+  #---- Prepare data ----
+  fig <-
+    subarea_tb |>
+    dplyr::group_by(.data[[said_col]]) |>
+    dplyr::summarize("{nwarn_col}" := dplyr::n(),
+      subarea_ha = dplyr::first(.data[[area_col]]),
+      xy_id = dplyr::first(.data[[said_col]])
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::mutate(subarea_type = cut(.data[[area_col]],
+      breaks = area_breaks,
+      labels = names(area_breaks)[-1]
+    )) |>
+    dplyr::group_by(
+      .data[[nwarn_col]],
+      .data[["subarea_type"]]
+    ) |>
+    dplyr::summarize(subarea_ha = sum(.data[[area_col]])) |>
+    dplyr::ungroup() |>
+    tibble::as_tibble() |>
+    ggplot2::ggplot() +
+    ggplot2::geom_col(
+      ggplot2::aes_string(
+        x = nwarn_col,
+        y = area_col,
+        fill = "subarea_type"
+      ),
+      position = "dodge"
+    ) +
+    ggplot2::xlab("Number of wanings.") +
+    ggplot2::ylab("Subarea (ha)") +
+    ggplot2::labs(fill = "Subarea less than") +
+    ggplot2::scale_y_continuous(labels = scales::comma) +
+    ggplot2::scale_colour_viridis_d()
 
-    #---- Prepare data ----
-    subarea_tb %>%
-        dplyr::group_by(.data[[said_col]]) %>%
-        dplyr::summarize("{nwarn_col}" := dplyr::n(),
-                         subarea_ha = dplyr::first(.data[[area_col]]),
-                         xy_id = dplyr::first(.data[[said_col]])) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(subarea_type = cut(.data[[area_col]],
-                                         breaks = area_breaks,
-                                         labels = names(area_breaks)[-1])) %>%
-        dplyr::group_by(.data[[nwarn_col]],
-                        .data[["subarea_type"]]) %>%
-        dplyr::summarize(subarea_ha = sum(.data[[area_col]])) %>%
-        dplyr::ungroup() %>%
-        tibble::as_tibble() %>%
-        ggplot2::ggplot() +
-        ggplot2::geom_col(ggplot2::aes_string(x = nwarn_col,
-                                              y = area_col,
-                                              fill = "subarea_type"),
-                          position = "dodge") +
-        ggplot2::xlab("Number of wanings.") +
-        ggplot2::ylab("Subarea (ha)") +
-        ggplot2::labs(fill = "Subarea less than") +
-        ggplot2::scale_y_continuous(labels = scales::comma) +
-        ggplot2::scale_colour_viridis_d() %>%
-        return()
+  return(fig)
 }
 
 #' @title Build histograms by state using DETER deforestation warnings.
@@ -216,42 +271,55 @@ get_plot_area_by_warnings_state <- function(subarea_tb, area_breaks,
                                             area_col = "subarea_ha",
                                             said_col = "xy_id",
                                             state_col = "UF") {
+  nwarn_col <- "n_warnings"
+  .data <- NULL
 
-    nwarn_col <- "n_warnings"
-
-    #---- Prepare data ----
-    subarea_tb %>%
-        dplyr::group_by(.data[[said_col]]) %>%
-        dplyr::summarize("{nwarn_col}" := dplyr::n(),
-                         subarea_ha = dplyr::first(.data[[area_col]]),
-                         xy_id = dplyr::first(.data[[said_col]]),
-                         UF = dplyr::first(.data[[state_col]])) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(area_type = cut(.data[[area_col]],
-                                      breaks = area_breaks,
-                                      labels = names(area_breaks)[-1])) %>%
-        dplyr::group_by(.data[[state_col]],
-                        .data[[nwarn_col]],
-                        .data[["area_type"]]) %>%
-        dplyr::summarize(subarea_ha = sum(.data[[area_col]])) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(prop = prop.table(.data[[area_col]]),
-                      prop = dplyr::if_else(.data[[nwarn_col]] > 2, NA,
-                                            .data[["prop"]])) %>%
-        tibble::as_tibble() %>%
+  #---- Prepare data ----
+  fig <-
+    subarea_tb |>
+    dplyr::group_by(.data[[said_col]]) |>
+    dplyr::summarize("{nwarn_col}" := dplyr::n(),
+      subarea_ha = dplyr::first(.data[[area_col]]),
+      xy_id = dplyr::first(.data[[said_col]]),
+      UF = dplyr::first(.data[[state_col]])
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::mutate(area_type = cut(.data[[area_col]],
+      breaks = area_breaks,
+      labels = names(area_breaks)[-1]
+    )) |>
+    dplyr::group_by(
+      .data[[state_col]],
+      .data[[nwarn_col]],
+      .data[["area_type"]]
+    ) |>
+    dplyr::summarize(subarea_ha = sum(.data[[area_col]])) |>
+    dplyr::ungroup() |>
+    dplyr::mutate(
+      prop = prop.table(.data[[area_col]]),
+      prop = dplyr::if_else(.data[[nwarn_col]] > 2, NA,
+        .data[["prop"]]
+      )
+    ) |>
+    tibble::as_tibble() |>
     #---- Plot ----
-        ggplot2::ggplot() +
-        ggplot2::geom_col(ggplot2::aes_string(x = nwarn_col,
-                                              y = area_col,
-                                              fill = "area_type"),
-                          position = "dodge") +
-        ggplot2::xlab("Number of wanings.") +
-        ggplot2::ylab("Subarea (ha)") +
-        ggplot2::labs(fill = "Subarea less than") +
-        ggplot2::scale_y_continuous(labels = scales::comma) +
-        ggplot2::scale_colour_viridis_d() +
-        ggplot2::facet_wrap(~UF, scales = "free") %>%
-        return()
+    ggplot2::ggplot() +
+    ggplot2::geom_col(
+      ggplot2::aes_string(
+        x = nwarn_col,
+        y = area_col,
+        fill = "area_type"
+      ),
+      position = "dodge"
+    ) +
+    ggplot2::xlab("Number of wanings.") +
+    ggplot2::ylab("Subarea (ha)") +
+    ggplot2::labs(fill = "Subarea less than") +
+    ggplot2::scale_y_continuous(labels = scales::comma) +
+    ggplot2::scale_colour_viridis_d() +
+    ggplot2::facet_wrap(~UF, scales = "free")
+
+  return(fig)
 }
 
 
@@ -272,25 +340,34 @@ get_plot_area_by_warnings_state <- function(subarea_tb, area_breaks,
 get_plot_area_by_class <- function(subarea_tb, area_col = "subarea_ha",
                                    label_col = "CLASSNAME",
                                    year_col = "year") {
+  .data <- NULL
 
-    #---- Prepare data ----
-    subarea_tb %>%
-        tibble::as_tibble() %>%
-        dplyr::group_by(.data[[label_col]],
-                        .data[[year_col]]) %>%
-        dplyr::summarize(subarea_ha = sum(.data[[area_col]])) %>%
-        dplyr::ungroup() %>%
-        ggplot2::ggplot() +
-        ggplot2::geom_bar(ggplot2::aes_string(x = year_col,
-                                              y = area_col,
-                                              fill = label_col),
-                          position = "dodge",
-                          stat = "identity") +
-        ggplot2::xlab("Year (PRODES)") +
-        ggplot2::ylab("Area (ha)") +
-        ggplot2::scale_y_continuous(labels = scales::comma) +
-        ggplot2::scale_colour_viridis_d() %>%
-        return()
+  #---- Prepare data ----
+  fig <-
+    subarea_tb |>
+    tibble::as_tibble() |>
+    dplyr::group_by(
+      .data[[label_col]],
+      .data[[year_col]]
+    ) |>
+    dplyr::summarize(subarea_ha = sum(.data[[area_col]])) |>
+    dplyr::ungroup() |>
+    ggplot2::ggplot() +
+    ggplot2::geom_bar(
+      ggplot2::aes_string(
+        x = year_col,
+        y = area_col,
+        fill = label_col
+      ),
+      position = "dodge",
+      stat = "identity"
+    ) +
+    ggplot2::xlab("Year (PRODES)") +
+    ggplot2::ylab("Area (ha)") +
+    ggplot2::scale_y_continuous(labels = scales::comma) +
+    ggplot2::scale_colour_viridis_d()
+
+  return(fig)
 }
 
 #' @title Build a histogram using the classes of DETER by Brazilian state.
@@ -311,28 +388,37 @@ get_plot_area_by_class <- function(subarea_tb, area_col = "subarea_ha",
 get_plot_area_by_class_state <- function(subarea_tb, area_col = "subarea_ha",
                                          label_col = "CLASSNAME",
                                          state_col = "UF", year_col = "year") {
+  .data <- NULL
 
-    #---- Prepare data ----
-    subarea_tb %>%
-        tibble::as_tibble() %>%
-        dplyr::group_by(.data[[label_col]],
-                        .data[[year_col]],
-                        .data[[state_col]]) %>%
-        dplyr::summarize(subarea_ha = sum(.data[[area_col]])) %>%
-        dplyr::ungroup() %>%
-        #---- Plot ----
-        ggplot2::ggplot() +
-        ggplot2::geom_bar(ggplot2::aes_string(x = year_col,
-                                              y = area_col,
-                                              fill = label_col),
-                          position = "dodge",
-                          stat = "identity") +
-        ggplot2::xlab("Year (PRODES)") +
-        ggplot2::ylab("Area (ha)") +
-        ggplot2::scale_y_continuous(labels = scales::comma) +
-        ggplot2::scale_colour_viridis_d() +
-        ggplot2::facet_wrap(~UF, scales = "free") %>%
-        return()
+  #---- Prepare data ----
+  fig <-
+    subarea_tb |>
+    tibble::as_tibble() |>
+    dplyr::group_by(
+      .data[[label_col]],
+      .data[[year_col]],
+      .data[[state_col]]
+    ) |>
+    dplyr::summarize(subarea_ha = sum(.data[[area_col]])) |>
+    dplyr::ungroup() |>
+    #---- Plot ----
+    ggplot2::ggplot() +
+    ggplot2::geom_bar(
+      ggplot2::aes_string(
+        x = year_col,
+        y = area_col,
+        fill = label_col
+      ),
+      position = "dodge",
+      stat = "identity"
+    ) +
+    ggplot2::xlab("Year (PRODES)") +
+    ggplot2::ylab("Area (ha)") +
+    ggplot2::scale_y_continuous(labels = scales::comma) +
+    ggplot2::scale_colour_viridis_d() +
+    ggplot2::facet_wrap(~UF, scales = "free")
+
+  return(fig)
 }
 
 #' @title Build boxplots of the days from first to last DETER warning.
@@ -358,61 +444,79 @@ get_plot_days_first_to_last <- function(subarea_tb, area_breaks,
                                         date_col = "VIEW_DATE",
                                         label_col = "CLASSNAME",
                                         said_col = "xy_id",
-                                        state_col = "UF"){
+                                        state_col = "UF") {
+  nwarn_col <- "n_warnings"
+  .data <- NULL
 
-    nwarn_col <- "n_warnings"
+  #---- Prepare data ----
+  fig <-
+    subarea_tb |>
+    dplyr::group_by(.data[[said_col]]) |>
+    dplyr::arrange(.data[[date_col]],
+      .by_group = TRUE
+    ) |>
+    dplyr::mutate(
+      last_CLASSNAME = dplyr::lag(.data[[label_col]]),
+      last_VIEW_DATE = dplyr::lag(.data[[date_col]]),
+      diff_days = as.vector(difftime(.data[[date_col]],
+        .data[["last_VIEW_DATE"]],
+        units = "days"
+      ))
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(tidyselect::all_of(c(
+      said_col, "diff_days",
+      area_col, state_col
+    ))) |>
+    dplyr::group_by(.data[[said_col]]) |>
+    dplyr::summarize("{nwarn_col}" := dplyr::n(),
+      "{area_col}" := dplyr::first(.data[[area_col]]),
+      "{said_col}" := dplyr::first(.data[[said_col]]),
+      "{state_col}" := dplyr::first(.data[[state_col]]),
+      days_first_last = sum(.data[["diff_days"]],
+        na.rm = TRUE
+      )
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::filter(
+      .data[[nwarn_col]] > 1,
+      .data[["days_first_last"]] > 0,
+      .data[[area_col]] > 3
+    ) |>
+    dplyr::mutate(
+      area_type = cut(.data[[area_col]],
+        breaks = area_breaks,
+        labels = names(area_breaks)[-1]
+      )
+    ) |>
+    dplyr::arrange(
+      .data[[state_col]],
+      .data[["area_type"]],
+      .data[["days_first_last"]]
+    ) |>
+    #---- Plot ----
+    tibble::as_tibble() |>
+    ggplot2::ggplot() +
+    ggplot2::geom_boxplot(ggplot2::aes_string(
+      x = "area_type",
+      y = "days_first_last"
+    )) +
+    ggplot2::facet_grid(stats::reformulate(state_col, nwarn_col)) +
+    ggplot2::xlab("") +
+    ggplot2::ylab("Days from first to last DETER warning") +
+    ggplot2::scale_y_continuous(labels = scales::comma) +
+    ggplot2::geom_hline(yintercept = 365, linetype = 3, color = "gray50") +
+    ggplot2::geom_hline(yintercept = 730, linetype = 3, color = "gray50") +
+    ggplot2::geom_hline(yintercept = 1095, linetype = 3, color = "gray50") +
+    ggplot2::geom_hline(yintercept = 1460, linetype = 3, color = "gray50") +
+    ggplot2::geom_hline(yintercept = 1825, linetype = 3, color = "gray50") +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(
+      angle = 90,
+      vjust = 1,
+      hjust = 1
+    ))
 
-    #---- Prepare data ----
-    subarea_tb %>%
-        dplyr::group_by(.data[[said_col]]) %>%
-        dplyr::arrange(.data[[date_col]],
-                       .by_group = TRUE) %>%
-        dplyr::mutate(last_CLASSNAME = dplyr::lag(.data[[label_col]]),
-                      last_VIEW_DATE = dplyr::lag(.data[[date_col]]),
-                      diff_days = as.vector(difftime(.data[[date_col]],
-                                                     .data[["last_VIEW_DATE"]],
-                                                     units = "days"))) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(tidyselect::all_of(c(said_col, "diff_days",
-                                           area_col, state_col))) %>%
-        dplyr::group_by(.data[[said_col]]) %>%
-        dplyr::summarize("{nwarn_col}" := dplyr::n(),
-                         "{area_col}"  := dplyr::first(.data[[area_col]]),
-                         "{said_col}"  := dplyr::first(.data[[said_col]]),
-                         "{state_col}" := dplyr::first(.data[[state_col]]),
-                         days_first_last = sum(.data[["diff_days"]],
-                                               na.rm = TRUE)) %>%
-        dplyr::ungroup() %>%
-        dplyr::filter(.data[[nwarn_col]] > 1,
-                      .data[["days_first_last"]] > 0,
-                      .data[[area_col]] > 3) %>%
-        dplyr::mutate(
-            area_type = cut(.data[[area_col]],
-                            breaks = area_breaks,
-                            labels = names(area_breaks)[-1])
-        ) %>%
-        dplyr::arrange(.data[[state_col]],
-                       .data[["area_type"]],
-                       .data[["days_first_last"]]) %>%
-
-        #---- Plot ----
-        tibble::as_tibble() %>%
-        ggplot2::ggplot() +
-        ggplot2::geom_boxplot(ggplot2::aes_string(x = "area_type",
-                                                  y = "days_first_last")) +
-        ggplot2::facet_grid(stats::reformulate(state_col, nwarn_col)) +
-        ggplot2::xlab("") +
-        ggplot2::ylab("Days from first to last DETER warning") +
-        ggplot2::scale_y_continuous(labels = scales::comma) +
-        ggplot2::geom_hline(yintercept = 365, linetype = 3, color = "gray50") +
-        ggplot2::geom_hline(yintercept = 730, linetype = 3, color = "gray50") +
-        ggplot2::geom_hline(yintercept = 1095,linetype = 3, color = "gray50") +
-        ggplot2::geom_hline(yintercept = 1460,linetype = 3, color = "gray50") +
-        ggplot2::geom_hline(yintercept = 1825,linetype = 3, color = "gray50") +
-        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90,
-                                                           vjust = 1,
-                                                           hjust = 1)) %>%
-        return()
+  return(fig)
 }
 
 
@@ -431,39 +535,50 @@ get_plot_days_first_to_last <- function(subarea_tb, area_breaks,
 #' @export
 get_plot_sankey <- function(data_tb, area_col = "subarea_ha",
                             label_col = "CLASSNAME", said_col = "xy_id") {
+  .data <- x <- next_x <- node <- next_node <- value <- NULL
 
-    x <- next_x <- node <- next_node <- value <- NULL
-    nwarn_col <- "n_warnings"
+  #---- Prepare data ----
+  fig <-
+    data_tb |>
+    dplyr::group_by(.data[[said_col]]) |>
+    dplyr::mutate(
+      group_row = dplyr::row_number(),
+      subarea_step = stringr::str_c(
+        "step_",
+        .data[["group_row"]]
+      )
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(tidyselect::all_of(c(
+      said_col, label_col,
+      "subarea_step", area_col
+    ))) |>
+    tidyr::pivot_wider(
+      names_from = tidyselect::all_of("subarea_step"),
+      values_from = tidyselect::all_of(label_col)
+    ) |>
+    dplyr::select_if(~ !all(is.na(.))) |>
+    tidyr::drop_na() |>
+    ggsankey::make_long(tidyselect::starts_with("step_"),
+      value = tidyselect::all_of(area_col)
+    ) |>
+    #---- Plot ----
+    ggplot2::ggplot(ggplot2::aes(
+      x = x,
+      next_x = next_x,
+      node = node,
+      next_node = next_node,
+      fill = node,
+      label = node,
+      value = value
+    )) +
+    ggsankey::geom_sankey(flow.alpha = .6, node.color = "gray30") +
+    ggsankey::geom_sankey_label() +
+    ggsankey::theme_sankey(base_size = 16) +
+    ggplot2::theme(legend.position = "none") +
+    ggplot2::labs(x = NULL)
 
-    #---- Prepare data ----
-    data_tb %>%
-        dplyr::group_by(.data[[said_col]]) %>%
-        dplyr::mutate(group_row = dplyr::row_number(),
-                      subarea_step = stringr::str_c("step_",
-                                                    .data[["group_row"]])) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(tidyselect::all_of(c(said_col, label_col,
-                                           "subarea_step", area_col))) %>%
-        tidyr::pivot_wider(names_from = tidyselect::all_of("subarea_step"),
-                           values_from = tidyselect::all_of(label_col)) %>%
-        dplyr::select_if(~!all(is.na(.))) %>%
-        tidyr::drop_na() %>%
-        ggsankey::make_long(tidyselect::starts_with("step_"),
-                            value = tidyselect::all_of(area_col)) %>%
-        #---- Plot ----
-        ggplot2::ggplot(ggplot2::aes(x = x,
-                                     next_x = next_x,
-                                     node = node,
-                                     next_node = next_node,
-                                     fill = node,
-                                     label = node,
-                                     value = value)) +
-        ggsankey::geom_sankey(flow.alpha = .6, node.color = "gray30") +
-        ggsankey::geom_sankey_label() +
-        ggsankey::theme_sankey(base_size = 16) +
-        ggplot2::theme(legend.position = "none") +
-        ggplot2::labs(x = NULL) %>%
-        return()
+  return(fig)
 }
 
 
@@ -484,76 +599,91 @@ get_plot_sankey <- function(data_tb, area_col = "subarea_ha",
 get_plot_sankey_year <- function(data_tb, area_col = "subarea_ha",
                                  label_col = "CLASSNAME", said_col = "xy_id",
                                  year_col = "year") {
+  .data <- x <- next_x <- node <- next_node <- value <- NULL
+  nwarn_col <- "n_warnings"
 
-    x <- next_x <- node <- next_node <- value <- NULL
-    nwarn_col <- "n_warnings"
+  # Helper function to sankey-format each data row independently.
+  .prep_sankey <- function(x) {
+    res <-
+      x |>
+      dplyr::select_if(~ !all(is.na(.))) |>
+      ggsankey::make_long(tidyselect::starts_with("step_"),
+        value = tidyselect::all_of(area_col)
+      )
+    return(res)
+  }
 
-    # Helper function to sankey-format each data row independently.
-    .prep_sankey <- function(x) {
-        x %>%
-            dplyr::select_if(~!all(is.na(.))) %>%
-            ggsankey::make_long(tidyselect::starts_with("step_"),
-                                value = tidyselect::all_of(area_col)) %>%
-            return()
-    }
+  #---- Prepapre data ----
 
-    #---- Prepapre data ----
+  # TODO: Get rid of %>%
+  fig <-
+    data_tb |>
+    # Count the number of warnings by subarea.
+    dplyr::group_by(.data[[said_col]]) |>
+    dplyr::mutate("{nwarn_col}" := dplyr::n()) |>
+    dplyr::ungroup() |>
+    # Leave only one observation (the first) by subarea by year.
+    dplyr::arrange(.data[[said_col, year_col]]) |>
+    dplyr::group_by(dplyr::across(tidyselect::all_of(c(
+      said_col,
+      year_col
+    )))) |>
+    dplyr::slice_head(n = 1) |>
+    dplyr::ungroup() |>
+    # Count (again) the number of warnings by subarea).
+    dplyr::group_by(.data[[said_col]]) |>
+    dplyr::mutate("{nwarn_col}" := dplyr::n()) |>
+    dplyr::ungroup() |>
+    # Take into account only trajectories longer than 1.
+    dplyr::filter(.data[[nwarn_col]] > 1) |>
+    # Convert the years into columns.
+    dplyr::mutate(
+      subarea_step = stringr::str_c("step_", .data[[year_col]])
+    ) |>
+    dplyr::select(tidyselect::all_of(c(
+      said_col, label_col, area_col,
+      "subarea_step"
+    ))) |>
+    tidyr::pivot_wider(
+      names_from = tidyselect::all_of("subarea_step"),
+      values_from = tidyselect::all_of(label_col)
+    ) |>
+    dplyr::select_if(~ !all(is.na(.))) %>%
+    dplyr::select(sort(colnames(.))) |>
+    # Apply the sankey formatting function by subarea.
+    dplyr::group_by(.data[[said_col]]) |>
+    dplyr::group_split() |>
+    furrr::future_map(.prep_sankey) |>
+    dplyr::bind_rows() |>
+    # Aggregate
+    dplyr::group_by(x, next_x, node, next_node) |>
+    dplyr::summarize(value = sum(value)) |>
+    dplyr::ungroup() |>
+    # Re-order.
+    dplyr::mutate(
+      x = forcats::fct_relevel(x, sort),
+      next_x = forcats::fct_relevel(next_x, sort)
+    ) |>
+    #---- Plot ----
+    ggplot2::ggplot(ggplot2::aes(
+      x = x,
+      next_x = next_x,
+      node = node,
+      next_node = next_node,
+      fill = factor(node),
+      label = node,
+      value = NULL
+    )) +
+    ggsankey::geom_sankey(
+      na.rm = FALSE,
+      flow.alpha = .5,
+      node.color = "gray30"
+    ) +
+    ggsankey::theme_sankey(base_size = 16) +
+    # ggsankey::geom_sankey_label() +
+    ggplot2::theme(legend.position = "bottom")
 
-    data_tb %>%
-        # Count the number of warnings by subarea.
-        dplyr::group_by(.data[[said_col]]) %>%
-        dplyr::mutate("{nwarn_col}" := dplyr::n()) %>%
-        dplyr::ungroup() %>%
-        # Leave only one observation (the first) by subarea by year.
-        dplyr::arrange(.data[[said_col, year_col]]) %>%
-        dplyr::group_by(dplyr::across(tidyselect::all_of(c(said_col,
-                                                           year_col)))) %>%
-        dplyr::slice_head(n = 1) %>%
-        dplyr::ungroup() %>%
-        # Count (again) the number of warnings by subarea).
-        dplyr::group_by(.data[[said_col]]) %>%
-        dplyr::mutate("{nwarn_col}" := dplyr::n()) %>%
-        dplyr::ungroup() %>%
-        # Take into account only trajectories longer than 1.
-        dplyr::filter(.data[[nwarn_col]] > 1) %>%
-        # Convert the years into columns.
-        dplyr::mutate(
-            subarea_step = stringr::str_c("step_", .data[[year_col]])
-        ) %>%
-        dplyr::select(tidyselect::all_of(c(said_col, label_col, area_col,
-                                           "subarea_step"))) %>%
-        tidyr::pivot_wider(names_from = tidyselect::all_of("subarea_step"),
-                           values_from = tidyselect::all_of(label_col)) %>%
-        dplyr::select_if(~!all(is.na(.))) %>%
-        dplyr::select(sort(colnames(.))) %>%
-        # Apply the sankey formatting function by subarea.
-        dplyr::group_by(.data[[said_col]]) %>%
-        dplyr::group_split() %>%
-        furrr::future_map(.prep_sankey) %>%
-        dplyr::bind_rows() %>%
-        # Aggregate
-        dplyr::group_by(x, next_x, node, next_node) %>%
-        dplyr::summarize(value = sum(value)) %>%
-        dplyr::ungroup() %>%
-        # Re-order.
-        dplyr::mutate(x = forcats::fct_relevel(x, sort),
-                      next_x = forcats::fct_relevel(next_x, sort)) %>%
-
-        #---- Plot ----
-        ggplot2::ggplot(ggplot2::aes(x = x,
-                                     next_x = next_x,
-                                     node = node,
-                                     next_node = next_node,
-                                     fill = factor(node),
-                                     label = node,
-                                     value = NULL)) +
-        ggsankey::geom_sankey(na.rm = FALSE,
-                              flow.alpha = .5,
-                              node.color = "gray30") +
-        ggsankey::theme_sankey(base_size = 16) +
-        #ggsankey::geom_sankey_label() +
-        ggplot2::theme(legend.position = "bottom") %>%
-        return()
+  return(fig)
 }
 
 #' @title Build a histogram plot of fire spot data
@@ -573,63 +703,91 @@ get_plot_fire_by_month <- function(data_tb,
                                    date_col = "datahora",
                                    year_col = "year",
                                    month_col = "month") {
+  nfspot_col <- "n_fspot"
+  .data <- NULL
 
-    nfspot_col <- "n_fspot"
+  #---- Prepare data ----
+  # TODO: Get rid of %>%
+  plot_tb <-
+    data_tb |>
+    dplyr::mutate(
+      "{month_col}" := as.integer(lubridate::month(.data[[date_col]])),
+      "{month_col}" := factor(month.abb[.data[[month_col]]],
+        ordered = TRUE,
+        levels = month.abb
+      ),
+      "{year_col}" := as.integer(lubridate::year(.data[[date_col]])),
+      "{year_col}" := factor(.data[[year_col]],
+        ordered = TRUE,
+        levels = rev(sort(unique(.data[[year_col]])))
+      )
+    ) |>
+    dplyr::summarize("{nfspot_col}" := dplyr::n(),
+      .by = tidyselect::all_of(c(year_col, month_col))
+    )
 
-    #---- Prepare data ----
-    plot_tb <-
-        data_tb %>%
-        dplyr::mutate(
-            "{month_col}" := as.integer(lubridate::month(.data[[date_col]])),
-            "{month_col}" := factor(month.abb[.data[[month_col]]],
-                                    ordered = TRUE,
-                                    levels = month.abb),
-            "{year_col}" := as.integer(lubridate::year(.data[[date_col]])),
-            "{year_col}" := factor(.data[[year_col]], ordered = TRUE,
-                          levels = rev(sort(unique(.data[[year_col]]))))) %>%
-        dplyr::summarize("{nfspot_col}" := dplyr::n(),
-                         .by = tidyselect::all_of(c(year_col, month_col)))
+  # Get the maximum number of fire spots by year and month.
+  max_year_month_tb <-
+    plot_tb |>
+    dplyr::slice_max(.data[[nfspot_col]],
+      by = tidyselect::all_of(month_col)
+    )
 
-    # Get the maximum number of fire spots by year and month.
-    max_year_month_tb <-
-        plot_tb %>%
-        dplyr::slice_max(.data[[nfspot_col]],
-                         by = tidyselect::all_of(month_col))
+  #---- Plot ----
+  fig <-
+    plot_tb |>
+    ggplot2::ggplot() +
+    ggplot2::geom_bar(
+      ggplot2::aes_string(
+        x = month_col,
+        y = nfspot_col,
+        fill = year_col
+      ),
+      alpha = 0.7,
+      stat = "identity"
+    ) +
+    ggplot2::geom_line(
+      ggplot2::aes_string(
+        x = month_col,
+        y = nfspot_col,
+        group = year_col
+      ),
+      linewidth = 2.0,
+      color = "black"
+    ) +
+    ggplot2::geom_line(
+      ggplot2::aes_string(
+        x = month_col,
+        y = nfspot_col,
+        group = year_col,
+        colour = year_col
+      ),
+      linewidth = 1.0
+    ) +
+    ggplot2::geom_point(
+      data = max_year_month_tb,
+      ggplot2::aes_string(
+        x = month_col,
+        y = nfspot_col
+      )
+    ) +
+    ggplot2::geom_label(
+      data = max_year_month_tb,
+      ggplot2::aes_string(
+        x = month_col,
+        y = nfspot_col,
+        label = year_col,
+        vjust = 0,
+        hjust = 0
+      )
+    ) +
+    ggplot2::xlab("") +
+    ggplot2::ylab("Number of fire spots") +
+    ggplot2::scale_y_continuous(labels = scales::comma) +
+    ggplot2::theme(legend.title = ggplot2::element_blank())
 
-    #---- Plot ----
-    plot_tb %>%
-        ggplot2::ggplot() +
-        ggplot2::geom_bar(ggplot2::aes_string(x = month_col,
-                                              y = nfspot_col,
-                                              fill = year_col),
-                          alpha = 0.7,
-                          stat = "identity") +
-        ggplot2::geom_line(ggplot2::aes_string(x = month_col,
-                                               y = nfspot_col,
-                                               group = year_col),
-                           linewidth = 2.0,
-                           color = "black") +
-        ggplot2::geom_line(ggplot2::aes_string(x = month_col,
-                                               y = nfspot_col,
-                                               group = year_col,
-                                               colour = year_col),
-                           linewidth = 1.0) +
-        ggplot2::geom_point(data = max_year_month_tb,
-                            ggplot2::aes_string(x = month_col,
-                                                y = nfspot_col)) +
-        ggplot2::geom_label(data = max_year_month_tb,
-                            ggplot2::aes_string(x = month_col,
-                                                y = nfspot_col,
-                                                label = year_col,
-                                                vjust = 0,
-                                                hjust = 0)) +
-        ggplot2::xlab("") +
-        ggplot2::ylab("Number of fire spots") +
-        ggplot2::scale_y_continuous(labels = scales::comma) +
-        ggplot2::theme(legend.title = ggplot2::element_blank()) %>%
-        return()
+  return(fig)
 }
-
 
 
 #' @title Build a histogram plot of fire spot data by state and month
@@ -651,38 +809,51 @@ get_plot_fire_by_month_state <- function(data_tb,
                                          year_col = "year",
                                          month_col = "month",
                                          state_col = "estado") {
+  nfspot_col <- "n_fspot"
+  .data <- NULL
 
-    nfspot_col <- "n_fspot"
+  #---- Prepare data ----
 
-    #---- Prepare data ----
-    plot_tb <-
-        data_tb %>%
-        dplyr::mutate(
-            "{month_col}" := as.integer(lubridate::month(.data[[date_col]])),
-            "{month_col}" := factor(month.abb[.data[[month_col]]],
-                                    ordered = TRUE,
-                                    levels = month.abb),
-            "{year_col}" := as.integer(lubridate::year(.data[[date_col]])),
-            "{year_col}" := factor(.data[[year_col]], ordered = TRUE,
-                          levels = rev(sort(unique(.data[[year_col]]))))) %>%
-        dplyr::summarize("{nfspot_col}" := dplyr::n(),
-                         "{state_col}" := dplyr::first(.data[[state_col]]),
-                         .by = tidyselect::all_of(c(state_col, year_col,
-                                                    month_col)))
+  plot_tb <-
+    data_tb |>
+    dplyr::mutate(
+      "{month_col}" := as.integer(lubridate::month(.data[[date_col]])),
+      "{month_col}" := factor(month.abb[.data[[month_col]]],
+        ordered = TRUE,
+        levels = month.abb
+      ),
+      "{year_col}" := as.integer(lubridate::year(.data[[date_col]])),
+      "{year_col}" := factor(.data[[year_col]],
+        ordered = TRUE,
+        levels = rev(sort(unique(.data[[year_col]])))
+      )
+    ) |>
+    dplyr::summarize("{nfspot_col}" := dplyr::n(),
+      "{state_col}" := dplyr::first(.data[[state_col]]),
+      .by = tidyselect::all_of(c(
+        state_col, year_col,
+        month_col
+      ))
+    )
 
-    #---- Plot ----
-    plot_tb %>%
-        ggplot2::ggplot() +
-        ggplot2::geom_line(ggplot2::aes_string(x = month_col,
-                                               y = nfspot_col,
-                                               group = year_col,
-                                               colour = year_col),
-                           linewidth = 1.0) +
-        ggplot2::facet_wrap(ggplot2::vars(.data[[state_col]])) +
-        ggplot2::xlab("") +
-        ggplot2::ylab("Number of fire spots") +
-        ggplot2::scale_y_continuous(labels = scales::comma) +
-        ggplot2::theme(legend.title = ggplot2::element_blank()) %>%
-        return()
+  #---- Plot ----
+  fig <-
+    plot_tb |>
+    ggplot2::ggplot() +
+    ggplot2::geom_line(
+      ggplot2::aes_string(
+        x = month_col,
+        y = nfspot_col,
+        group = year_col,
+        colour = year_col
+      ),
+      linewidth = 1.0
+    ) +
+    ggplot2::facet_wrap(ggplot2::vars(.data[[state_col]])) +
+    ggplot2::xlab("") +
+    ggplot2::ylab("Number of fire spots") +
+    ggplot2::scale_y_continuous(labels = scales::comma) +
+    ggplot2::theme(legend.title = ggplot2::element_blank())
+
+  return(fig)
 }
-
