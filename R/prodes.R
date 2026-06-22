@@ -3,9 +3,9 @@
 #' @name compute_prodes_year
 #'
 #' @description
-#' This function computes the corresponding PRODES (the brazilian deforestation
-#' monitoring system) year of the given date. The #' PRODES year usually goes
-#' starts on the August the first of each year.
+#' This function computes the corresponding PRODES year of the given date
+#' (PRODES is the brazilian deforestation monitoring system). The PRODES year
+#' starts on August and it takes the year of its last July.
 #' @param adate A date vector.
 #' @param start_month A character. The month (number) of the first month of
 #' a PRODES year.
