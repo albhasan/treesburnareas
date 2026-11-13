@@ -5,29 +5,32 @@ test_that("compute_prodes_year works", {
   )
   exp_years <- c(2009, 2009, 2009, 2008, 2008)
   expect_equal(
-    compute_prodes_year(as.Date(test_dates)),
-    exp_years
+    object = compute_prodes_year(as.Date(test_dates)),
+    expected = exp_years
   )
 })
 
 test_that("get_prodes_codes works", {
   data_tb <- get_prodes_codes()
-  expect_equal(dim(data_tb), expected = c(56, 6))
-  expect_equal(colnames(data_tb),
+  expect_equal(object = dim(data_tb), expected = c(66, 8))
+  expect_equal(
+    object = colnames(data_tb),
     expected = c(
       "prodes_code",
       "common_name",
       "class_tif_2021",
       "class_shp_2021",
       "class_tif_2022",
-      "class_gpkg_2022"
+      "class_gpkg_2022",
+      "class_tif_2025",
+      "class_gpkg_2025"
     )
   )
   last_prodes_year <- compute_prodes_year(Sys.Date()) - 1
-  if (!(paste0("d", last_prodes_year) %in% data_tb[[3]])) {
+  if (!(paste0("d", last_prodes_year) %in% data_tb[[7]])) {
     warning("The codes in get_prodes_codes (raster) could be outdated!")
   }
-  if (!(paste0("d", last_prodes_year) %in% data_tb[[4]])) {
+  if (!(paste0("d", last_prodes_year) %in% data_tb[[8]])) {
     warning("The codes in get_prodes_codes (vector) could be outdated!")
   }
 })

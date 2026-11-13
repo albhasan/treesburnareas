@@ -108,7 +108,7 @@ get_prodes_codes <- function() {
 91L,          "Water",         "Hidrografia",     "HIDROGRAFIA",   "Hidrografia",   "HIDROGRAFIA",    "Hidrografia",                    "HIDROGRAFIA",  
 91L,          NA,              NA,                NA,              NA,              "hidrografia",    NA,                               "hidrografia",  
 #                                                                                                                                                       
-100L,         "Forest",        "Floresta",        "FOREST_2021",   "Floresta",      "FOREST_2022",    "Vegetação nativa florestal",     "FOREST_2025",
+100L,         "Forest",        "Floresta",        "FOREST_2021",   "Floresta",      "FOREST_2022",    "Vegetacao nativa florestal",     "FOREST_2025",
 100L,         NA,              NA,                NA,              NA,              "FOREST_2016",    NA,                               "FOREST_2016",  
 100L,         NA,              NA,                NA,              NA,              "FOREST_2017",    NA,                               "FOREST_2017",  
 100L,         NA,              NA,                NA,              NA,              "FOREST_2018",    NA,                               "FOREST_2018",  
@@ -120,7 +120,7 @@ get_prodes_codes <- function() {
 100L,         NA,              NA,                NA,              NA,              NA,               NA,                               "FOREST_2024",  
 100L,         NA,              NA,                NA,              NA,              NA,               NA,                               "FOREST_2025",  
 #                                                                                                                                                       
-101L,         "No Forest",     "NaoFloresta",     "NAO_FLORESTA",  "Nao Floresta",  "Nao Floresta",   "Vegetação nativa não florestal", "Nao Floresta",
+101L,         "No Forest",     "NaoFloresta",     "NAO_FLORESTA",  "Nao Floresta",  "Nao Floresta",   "Vegetacao nativa nao florestal", "Nao Floresta",
 102L,         "No Forest",     NA,                "NAO_FLORESTA2", NA,              "NAO_FLORESTA2",   NA,                              "NAO_FLORESTA2",
 103L,         NA,              NA,                NA,              NA,              "NAO_FLORESTA3",   NA,                              "NAO_FLORESTA3",
 #
