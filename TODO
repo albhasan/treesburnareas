@@ -1,5 +1,10 @@
 # TODO:
 #
+# - Update PRODES and DETER.
+# - Test scripts with newer PRODES & DETER.
+# - Enumerate the scripts.
+# - Run experiment for Lucas Maure.
+#
 # - Do Sankey again, only for burn scars.
 #
 # - Try to specify the degradation type (get time series of subareas' centroids 
